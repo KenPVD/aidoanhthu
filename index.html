@@ -1,417 +1,704 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI phân tích doanh thu</title>
-<link rel="icon" type="image/png" href="https://i.ibb.co/qMwK7h1n/xgame.png">
-<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;700&display=swap" rel="stylesheet">
-<style>
-    :root {
-        --bg-dark: #050505;
-        --cyan-neon: #00f2fe;
-        --cyan-glow: rgba(0, 242, 254, 0.5);
-        --text-white: #ffffff;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI phân tích doanh thu</title>
+    <link rel="icon" type="image/png" href="https://i.ibb.co/qMwK7h1n/xgame.png">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --cyan-neon: #00f2fe;
+            --cyan-glow: rgba(0, 242, 254, 0.5);
+            --text-white: #ffffff;
+        }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-    body { 
-        font-family: 'Inter', sans-serif; 
-        background-color: var(--bg-dark);
-        height: 100vh;
-        display: flex; justify-content: center; align-items: center; 
-        overflow: hidden; position: relative;
-    }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
 
-    /* CANVAS NỀN CODE RƠI */
-    #matrix {
-        position: absolute;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        z-index: 0;
-        opacity: 0.15; /* Chỉnh độ đậm nhạt của code nền ở đây */
-    }
+        /* CANVAS NỀN CODE RƠI */
+        #matrix {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.5;
+            /* Chỉnh độ đậm nhạt của code nền ở đây */
+        }
 
-    .chat-container { 
-        width: 95%; max-width: 850px; height: 90vh; 
-        background: rgba(10, 10, 15, 0.85); 
-        border: 2px solid var(--cyan-neon);
-        border-radius: 8px;
-        display: flex; flex-direction: column; 
-        box-shadow: 0 0 25px var(--cyan-glow);
-        backdrop-filter: blur(8px);
-        position: relative; z-index: 10;
-    }
+        .chat-container {
+            width: 95%;
+            max-width: 850px;
+            height: 90vh;
+            background: rgba(10, 10, 15, 0.85);
+            border: 2px solid var(--cyan-neon);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 25px var(--cyan-glow);
+            backdrop-filter: blur(8px);
+            position: relative;
+            z-index: 10;
+        }
 
-    .chat-header { 
-        padding: 15px 25px;
-        background: rgba(0, 0, 0, 0.9);
-        border-bottom: 2px solid var(--cyan-neon);
-        display: flex; align-items: center; gap: 15px;
-        border-radius: 8px 8px 0 0;
-    }
+        .chat-header {
+            padding: 15px 25px;
+            background: rgba(0, 0, 0, 0.9);
+            border-bottom: 2px solid var(--cyan-neon);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-radius: 8px 8px 0 0;
+        }
 
-    .avt {
-        width: 45px; height: 45px;
-        border: 2px solid var(--cyan-neon);
-        box-shadow: 0 0 10px var(--cyan-glow);
-    }
+        .avt {
+            width: 45px;
+            height: 45px;
+            border: 2px solid var(--cyan-neon);
+            box-shadow: 0 0 10px var(--cyan-glow);
+        }
 
-    .header-info b {
-        color: var(--cyan-neon);
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        font-size: 15px;
-        text-shadow: 0 0 8px var(--cyan-neon);
-    }
+        .header-info b {
+            color: var(--cyan-neon);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 15px;
+            text-shadow: 0 0 8px var(--cyan-neon);
+        }
 
-    .status {
-        font-size: 11px; color: #00ff00;
-        display: flex; align-items: center; gap: 5px;
-        font-family: 'Fira Code', monospace;
-        margin-top: 3px;
-    }
+        .status {
+            font-size: 11px;
+            color: #00ff00;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-family: 'Fira Code', monospace;
+            margin-top: 3px;
+        }
 
-    .messages { 
-        flex: 1; overflow-y: auto; padding: 25px;
-        background: rgba(0,0,0,0.1);
-    }
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 25px;
+            background: rgba(0, 0, 0, 0.1);
+        }
 
-    .msg { 
-        margin-bottom: 20px; padding: 14px 18px; 
-        max-width: 85%; line-height: 1.6; font-size: 15px;
-        border-radius: 4px;
-    }
+        .msg {
+            margin-bottom: 20px;
+            padding: 14px 18px;
+            max-width: 85%;
+            line-height: 1.6;
+            font-size: 15px;
+            border-radius: 4px;
+        }
 
-    /* USER MSG: KHÔNG CÒN CHỮ ĐEN */
-    .user { 
-        background: rgba(0, 242, 254, 0.15);
-        color: var(--text-white); 
-        margin-left: auto; 
-        border: 1px solid var(--cyan-neon);
-        font-weight: 700;
-        text-shadow: 0 0 5px var(--cyan-glow);
-    }
+        /* USER MSG: KHÔNG CÒN CHỮ ĐEN */
+        .user {
+            background: rgba(0, 242, 254, 0.15);
+            color: var(--text-white);
+            margin-left: auto;
+            border: 1px solid var(--cyan-neon);
+            font-weight: 700;
+            text-shadow: 0 0 5px var(--cyan-glow);
+        }
 
-    /* BOT MSG: CHỮ CYAN NHẠT */
-    .bot { 
-        background: rgba(20, 20, 30, 0.8);
-        color: #d1faff; 
-        margin-right: auto;
-        font-family: 'Fira Code', monospace;
-        border-left: 4px solid var(--cyan-neon);
-        white-space: pre-wrap;
-    }
+        /* BOT MSG: CHỮ CYAN NHẠT */
+        .bot {
+            background: rgba(20, 20, 30, 0.8);
+            color: #d1faff;
+            margin-right: auto;
+            font-family: 'Fira Code', monospace;
+            border-left: 4px solid var(--cyan-neon);
+            white-space: pre-wrap;
+        }
 
-    .input-area { 
-        padding: 20px; background: rgba(0, 0, 0, 0.9);
-        border-top: 1px solid var(--cyan-neon);
-        border-radius: 0 0 8px 8px;
-    }
+        .input-area {
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            border-top: 1px solid var(--cyan-neon);
+            border-radius: 0 0 8px 8px;
+        }
 
-    .input-box {
-        display: flex; background: #111;
-        border: 1px solid #333; border-radius: 6px; padding: 8px;
-    }
+        .input-box {
+            display: flex;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 8px;
+        }
 
-    .input-box:focus-within { border-color: var(--cyan-neon); box-shadow: 0 0 12px var(--cyan-glow); }
+        .input-box:focus-within {
+            border-color: var(--cyan-neon);
+            box-shadow: 0 0 12px var(--cyan-glow);
+        }
 
-    textarea { 
-        flex: 1; background: transparent; border: none;
-        color: var(--text-white); padding: 10px;
-        height: 50px; resize: none; outline: none; font-size: 15px;
-        font-family: 'Fira Code', monospace;
-    }
-    textarea::placeholder { color: rgba(0, 242, 254, 0.4); }
+        textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-white);
+            padding: 10px;
+            height: 50px;
+            resize: none;
+            outline: none;
+            font-size: 15px;
+            font-family: 'Fira Code', monospace;
+        }
 
-    .send-btn { 
-        width: 50px; background: transparent; border: none;
-        color: var(--cyan-neon); cursor: pointer;
-        display: flex; justify-content: center; align-items: center;
-    }
+        textarea::placeholder {
+            color: rgba(0, 242, 254, 0.4);
+        }
 
-    /* Tùy chỉnh thanh cuộn */
-    .messages::-webkit-scrollbar { width: 5px; }
-    .messages::-webkit-scrollbar-thumb { background: var(--cyan-neon); border-radius: 10px; }
-</style>
+        .send-btn {
+            width: 50px;
+            background: transparent;
+            border: none;
+            color: var(--cyan-neon);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Tùy chỉnh thanh cuộn */
+        .messages::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .messages::-webkit-scrollbar-thumb {
+            background: var(--cyan-neon);
+            border-radius: 10px;
+        }
+
+        /* LOADING FULL MÀN */
+        #loader {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: #050505;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+            color: #00f2fe;
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* BOX */
+        .loader-box {
+            text-align: center;
+        }
+
+        /* SPINNER XOAY */
+        .spinner {
+            width: 90px;
+            height: 90px;
+            border: 5px solid rgba(0, 242, 254, 0.2);
+            border-top: 5px solid #00f2fe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: auto;
+            box-shadow: 0 0 20px #00f2fe;
+            position: relative;
+        }
+
+        /* TEXT */
+        #loader p {
+            margin-top: 15px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        /* ANIMATION */
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spinner-wrap {
+            position: relative;
+            width: 90px;
+            height: 90px;
+            margin: auto;
+        }
+
+        /* VÒNG QUAY */
+        .spinner {
+            width: 100%;
+            height: 100%;
+            border: 5px solid rgba(0, 242, 254, 0.2);
+            border-top: 5px solid #00f2fe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            box-shadow: 0 0 20px #00f2fe;
+        }
+
+        /* LOGO ĐỨNG YÊN */
+        .logo {
+            position: absolute;
+            width: 55px;
+            height: 55px;
+            background: url("https://i.ibb.co/qMwK7h1n/xgame.png") center/contain no-repeat;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            filter: drop-shadow(0 0 6px #00f2fe);
+        }
+
+        .theme-btn {
+            margin-left: auto;
+            padding: 8px 16px;
+
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 1px;
+
+            color: var(--cyan-neon);
+            background: transparent;
+
+            border: 1px solid var(--cyan-neon);
+            border-radius: 6px;
+
+            cursor: pointer;
+
+            text-shadow: 0 0 6px var(--cyan-neon);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+
+            transition: 0.3s;
+        }
+
+        .theme-btn:hover {
+            background: var(--cyan-neon);
+            color: #000;
+
+            box-shadow:
+                0 0 10px var(--cyan-neon),
+                0 0 25px var(--cyan-neon),
+                0 0 40px var(--cyan-neon);
+
+            text-shadow: none;
+        }
+
+        .theme-btn {
+            animation: glowPulse 2s infinite alternate;
+        }
+
+        @keyframes glowPulse {
+            from {
+                box-shadow: 0 0 5px var(--cyan-neon);
+            }
+
+            to {
+                box-shadow: 0 0 20px var(--cyan-neon);
+            }
+        }
+
+        * {
+            transition: all 0.3s ease;
+        }
+    </style>
 </head>
+
 <body>
-
-<canvas id="matrix"></canvas>
-
-<div class="chat-container">
-    <div class="chat-header">
-        <img class="avt" src="https://i.ibb.co/qMwK7h1n/xgame.png" alt="X-Game">
-        <div class="header-info">
-            <b>AI QUÁN NET XGAME</b>
-            <div class="status">● ĐANG TRỰC TUYẾN</div>
+    <div id="loader">
+        <div class="loader-box">
+            <div class="spinner-wrap">
+                <div class="spinner"></div>
+                <div class="logo"></div>
+            </div>
+            <p>Đang khởi động hệ thống...</p>
         </div>
     </div>
-    
-    <div id="messages" class="messages">
-        <div class="msg bot">> Kích Hoạt AI Thành Công✅
+    <canvas id="matrix"></canvas>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <img class="avt" src="https://i.ibb.co/qMwK7h1n/xgame.png" alt="X-Game">
+            <div class="header-info">
+                <b>AI QUÁN NET XGAME</b>
+                <div class="status">● ĐANG TRỰC TUYẾN</div>
+            </div>
+            <!-- 🎨 NÚT ĐỔI MÀU -->
+            <button onclick="changeTheme()" class="theme-btn">🎨 ĐỔI MÀU SẮC</button>
+        </div>
+
+        <div id="messages" class="messages">
+            <div class="msg bot">> Kích Hoạt AI Thành Công✅
 > Phiên Bản: v2 Nâng Cấp Giao Diện
 > Nhập hàng bán hoặc dùng /help, /kiemsoban, /kiemtien</div>
-    </div>
-    
-    <div class="input-area">
-        <div class="input-box">
-            <textarea id="input" placeholder="Nhập doanh thu tại đây..."></textarea>
-            <button class="send-btn" onclick="send()">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-            </button>
+        </div>
+
+        <div class="input-area">
+            <div class="input-box">
+                <textarea id="input" placeholder="Nhập doanh thu tại đây..."></textarea>
+                <button class="send-btn" onclick="send()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-// --- CANVAS MATRIX EFFECT ---
-const canvas = document.getElementById('matrix');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+    <script>
+        // --- CANVAS MATRIX EFFECT ---
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
 
-const codes = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<>/{}[];:+-*";
-const fontSize = 16;
-const columns = canvas.width / fontSize;
-const drops = Array(Math.floor(columns)).fill(1);
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-function drawMatrix() {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#00f2fe";
-    ctx.font = fontSize + "px 'Fira Code'";
+        let nodes = [];
 
-    for (let i = 0; i < drops.length; i++) {
-        const text = codes.charAt(Math.floor(Math.random() * codes.length));
-        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
-        drops[i]++;
-    }
-}
-setInterval(drawMatrix, 50);
+        // tăng số node cho dày hơn
+        for (let i = 0; i < 120; i++) {
+            nodes.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: (Math.random() - 0.5) * 0.5
+            });
+        }
 
-// --- LOGIC XỬ LÝ CHAT GỐC CỦA BẠN (GIỮ NGUYÊN) ---
-let tienDichVu=0;
-let tienDoAn=0;
-let chenhlech=0;
-let tienMay = 0;
+        function drawTech() {
+            // giảm độ mờ nền
+            ctx.fillStyle = "rgba(0,0,0,0.03)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-const messages=document.getElementById("messages");
-const input=document.getElementById("input");
-let kiemSoBanMode=false;
-let kiemStep=0;
-let kiemTienMode = false;
-let kiemTienStep = 0;
-let soDuCuoi = 0;
-let soDuTruoc = 0;
-let tienMomo = 0;
+            // dây rõ hơn
+            ctx.lineWidth = 1.2;
 
-let kiemItems=[
-{name:"🥤 Nước 20k",gia:20000},
-{name:"🥤 Nước 15k",gia:15000},
-{name:"🥤 Nước 14k",gia:14000},
-{name:"🥤 Nước 12k",gia:12000,type:"nuoc10"},
-{name:"🍦 Kem",gia:15000},
-{name:"🍜 Tổng mỳ",gia:10000,type:"my"},
-{name:"🍙 Kimbap",gia:20000},
-{name:"🌭 Xúc xích",gia:10000},
-{name:"🥚 Trứng",gia:10000},
-{name:"🍟 Snack",gia:10000},
-{name:"🚬 Thuốc",gia:25000}
-];
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
 
-let tongMyTam=0;
-let tongNuoc10Tam=0;
-let tongTien=0;
-let dangMenuKetThuc=false;
-let dangNhapComboNuoc10=false;
-let dangNhapMyNuoc=false;
-input.addEventListener("keydown", function(e){
-if(e.key === "Enter" && !e.shiftKey){
-e.preventDefault(); // không xuống dòng
-send(); // gửi tin nhắn
-}
-});
+                    let dx = nodes[i].x - nodes[j].x;
+                    let dy = nodes[i].y - nodes[j].y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
 
-function addMsg(text,type){
-let div=document.createElement("div");
-div.className="msg "+type;
-div.textContent=text;
-messages.appendChild(div);
-messages.scrollTop=messages.scrollHeight;
-}
+                    if (dist < 160) {
+                        // tăng độ sáng mạnh hơn
+                        let alpha = 1.2 - dist / 160;
+                        let neonColor = getComputedStyle(document.documentElement).getPropertyValue('--cyan-neon').trim();
 
-function phanTichDoanhThu(text){
+                        // convert hex -> rgba
+                        function hexToRgb(hex) {
+                            let r = parseInt(hex.substring(1, 3), 16);
+                            let g = parseInt(hex.substring(3, 5), 16);
+                            let b = parseInt(hex.substring(5, 7), 16);
+                            return `${r},${g},${b}`;
+                        }
 
-let nuoc10=0,tien10=0;
-let comboNuoc10=0;
-let nuoc12=0,tien12=0;
-let nuoc15=0,tien15=0;
-let nuoc18=0,tien18=0;
+                        let rgb = hexToRgb(neonColor);
 
-let myNuoc=0,tienMyNuoc=0;
-let myXao=0,tienMyXao=0;
+                        ctx.strokeStyle = `rgba(${rgb}, ${alpha})`;
 
-let kimbap=0,tienKimbap=0;
-let xucxich=0,tienXucxich=0;
-let trung=0,tienTrung=0;
-let kem=0,tienKem=0;
-let snack=0,tienSnack=0;
-let thuoc=0,tienThuoc=0;
+                        ctx.beginPath();
+                        ctx.moveTo(nodes[i].x, nodes[i].y);
+                        ctx.lineTo(nodes[j].x, nodes[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
 
-let lines=text.split("\n");
-let tongBaoCao=0;
+            // node sáng + glow
+            nodes.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                ctx.fillStyle = "#00f2fe";
 
-for(let line of lines){
+                ctx.shadowBlur = 12;
+                ctx.shadowColor = "#00f2fe";
 
-let tongMatch=line.match(/Tổng\s*cộng\s*([\d,]+)/i);
-if(tongMatch){
-tongBaoCao=parseInt(tongMatch[1].replace(/,/g,""));
-}
+                ctx.fill();
 
-if(!line.includes("Tổng cộng:")) continue;
+                ctx.shadowBlur = 0; // reset
+            });
 
-let match=line.match(/Tổng cộng:\s*(.*?)\s+(\d+)\s+([\d,]+)/i);
-if(!match) continue;
+            // di chuyển chậm hơn cho mượt
+            nodes.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
 
-let ten=match[1].toUpperCase();
-let soLuong=parseInt(match[2]);
-let tien=parseInt(match[3].replace(/,/g,""));
+                if (p.x <= 0 || p.x >= canvas.width) p.vx *= -1;
+                if (p.y <= 0 || p.y >= canvas.height) p.vy *= -1;
+            });
 
-let gia=Math.round(tien/soLuong);
+            requestAnimationFrame(drawTech);
+        }
 
+        drawTech();
 
-// ===== NƯỚC =====
-if(/STING|PEPSI|COCA|MIRINDA|SPRITE|AQUA|REVIVE|RIVIVE|ROCK|OLONG|O LONG|TRA|TRÀ|COZY|SUA|SỮA|NUTRI|TRAU|HUC|HÚC|BO HUC|BÒ HÚC/i.test(ten)){
-  
-if(gia<=12000){ // nước 12k (từ 10k)
+        let themes = [
+            { main: "#00f2fe", glow: "rgba(0,242,254,0.5)" }, // cyan
 
-nuoc10+=soLuong;
-tien10+=tien;
+            { main: "#ff00ff", glow: "rgba(255,0,255,0.5)" }, // tím neon
+            { main: "#39ff14", glow: "rgba(57,255,20,0.5)" }, // xanh hacker
+            { main: "#ffaa00", glow: "rgba(255,170,0,0.5)" }, // cam
+            { main: "#ff1493", glow: "rgba(255,20,147,0.5)" }, // hồng đậm
 
-// chỉ tính combo cho sting vàng, pepsi, aqua
-if(/STING VANG|PEPSI|AQUA/i.test(ten)){
+            { main: "#00ff00", glow: "rgba(0,255,0,0.5)" }, // xanh lá
 
-let chaiTinhTien = Math.round(tien/12000);
-let chaiCombo = soLuong - chaiTinhTien;
+            { main: "#ff0000", glow: "rgba(255,0,0,0.5)" }, // đỏ
 
-if(chaiCombo>0){
-comboNuoc10 += chaiCombo;
-}
+            { main: "#ffd700", glow: "rgba(255,215,0,0.5)" }, // vàng
 
-}
+            { main: "#8a2be2", glow: "rgba(138,43,226,0.5)" }, // tím đậm
+            { main: "#ff4500", glow: "rgba(255,69,0,0.5)" }, // đỏ cam
+            { main: "#ffffff", glow: "rgba(255,255,255,0.5)" }, // trắng
 
-}
-else if(gia<=14000){nuoc12+=soLuong;tien12+=tien;}
-else if(gia<=15000){nuoc15+=soLuong;tien15+=tien;}
-else{nuoc18+=soLuong;tien18+=tien;}
+            { main: "#ff66cc", glow: "rgba(255,102,204,0.5)" }, // hồng pastel
+            { main: "#66ffcc", glow: "rgba(102,255,204,0.5)" }, // mint
+        ];
 
-}
+        let currentTheme = 0;
+        // --- LOGIC XỬ LÝ CHAT GỐC CỦA BẠN (GIỮ NGUYÊN) ---
+        let tienDichVu = 0;
+        let tienDoAn = 0;
+        let chenhlech = 0;
+        let tienMay = 0;
 
+        const messages = document.getElementById("messages");
+        const input = document.getElementById("input");
+        let kiemSoBanMode = false;
+        let kiemStep = 0;
+        let kiemTienMode = false;
+        let kiemTienStep = 0;
+        let soDuCuoi = 0;
+        let soDuTruoc = 0;
+        let tienMomo = 0;
 
-// ===== MỲ =====
-else if(ten.includes("MY") || ten.includes("MỲ")){
+        let kiemItems = [
+            { name: "🥤 Nước 20k", gia: 20000 },
+            { name: "🥤 Nước 15k", gia: 15000 },
+            { name: "🥤 Nước 14k", gia: 14000 },
+            { name: "🥤 Nước 12k", gia: 12000, type: "nuoc10" },
+            { name: "🍦 Kem", gia: 15000 },
+            { name: "🍜 Tổng mỳ", gia: 10000, type: "my" },
+            { name: "🍙 Kimbap", gia: 20000 },
+            { name: "🌭 Xúc xích", gia: 10000 },
+            { name: "🥚 Trứng", gia: 10000 },
+            { name: "🍟 Snack", gia: 10000 },
+            { name: "🚬 Thuốc", gia: 25000 }
+        ];
 
-if(ten.includes("XAO")){
-myXao+=soLuong;
-tienMyXao+=soLuong*20000;
-}else{
-myNuoc+=soLuong;
-tienMyNuoc+=soLuong*10000;
-}
+        let tongMyTam = 0;
+        let tongNuoc10Tam = 0;
+        let tongTien = 0;
+        let dangMenuKetThuc = false;
+        let dangNhapComboNuoc10 = false;
+        let dangNhapMyNuoc = false;
+        input.addEventListener("keydown", function (e) {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault(); // không xuống dòng
+                send(); // gửi tin nhắn
+            }
+        });
 
-// trứng kèm mỳ
-if(/TRUNG|TRỨNG|OP LA|ỐP LA|LUOT|LUỘC/i.test(ten)){
-trung+=soLuong;
-tienTrung+=soLuong*10000;
-}
+        function addMsg(text, type) {
+            let div = document.createElement("div");
+            div.className = "msg " + type;
+            div.textContent = text;
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        }
 
-// xúc xích kèm mỳ
-if(/XUC XICH|XÚC XÍCH/i.test(ten)){
-xucxich+=soLuong;
-tienXucxich+=soLuong*10000;
-}
+        function phanTichDoanhThu(text) {
 
-}
+            let nuoc10 = 0, tien10 = 0;
+            let comboNuoc10 = 0;
+            let nuoc12 = 0, tien12 = 0;
+            let nuoc15 = 0, tien15 = 0;
+            let nuoc18 = 0, tien18 = 0;
 
+            let myNuoc = 0, tienMyNuoc = 0;
+            let myXao = 0, tienMyXao = 0;
 
-// ===== TRỨNG RIÊNG =====
-else if(/TRUNG|TRỨNG|OP LA|ỐP LA|LUOT|LUỘC/i.test(ten)){
-trung+=soLuong;
-tienTrung+=soLuong*10000;
-}
+            let kimbap = 0, tienKimbap = 0;
+            let xucxich = 0, tienXucxich = 0;
+            let trung = 0, tienTrung = 0;
+            let kem = 0, tienKem = 0;
+            let snack = 0, tienSnack = 0;
+            let thuoc = 0, tienThuoc = 0;
 
+            let lines = text.split("\n");
+            let tongBaoCao = 0;
 
-// ===== KIMBAP =====
-else if(ten.includes("KIMBAP")){
-kimbap+=soLuong;
-tienKimbap+=soLuong*20000;
-}
+            for (let line of lines) {
 
+                let tongMatch = line.match(/Tổng\s*cộng\s*([\d,]+)/i);
+                if (tongMatch) {
+                    tongBaoCao = parseInt(tongMatch[1].replace(/,/g, ""));
+                }
 
-// ===== XÚC XÍCH =====
-else if(/XUC XICH|XÚC XÍCH/i.test(ten)){
-xucxich+=soLuong;
-tienXucxich+=tien;
-}
+                if (!line.includes("Tổng cộng:")) continue;
 
+                let match = line.match(/Tổng cộng:\s*(.*?)\s+(\d+)\s+([\d,]+)/i);
+                if (!match) continue;
 
-// ===== KEM =====
-else if(ten.includes("KEM")){
-kem+=soLuong;
-tienKem+=soLuong*15000;
-}
+                let ten = match[1].toUpperCase();
+                let soLuong = parseInt(match[2]);
+                let tien = parseInt(match[3].replace(/,/g, ""));
 
-
-// ===== SNACK =====
-else if(/BIM|SNACK/i.test(ten)){
-snack+=soLuong;
-tienSnack+=tien;
-}
+                let gia = Math.round(tien / soLuong);
 
 
-// ===== THUỐC =====
-else if(/THUOC|THUỐC/i.test(ten)){
-thuoc+=soLuong;
-tienThuoc+=soLuong*25000;
-}
+                // ===== NƯỚC =====
+                if (/STING|PEPSI|COCA|MIRINDA|SPRITE|AQUA|REVIVE|RIVIVE|ROCK|OLONG|O LONG|TRA|TRÀ|COZY|SUA|SỮA|NUTRI|TRAU|HUC|HÚC|BO HUC|BÒ HÚC/i.test(ten)) {
 
-}
+                    if (gia <= 12000) { // nước 12k (từ 10k)
 
-let tongMy = myNuoc + myXao;
-let tienTongMy = tienMyNuoc + tienMyXao;
+                        nuoc10 += soLuong;
+                        tien10 += tien;
 
-let tongAI=
-tien10+
-tien12+
-tien15+
-tien18+
-tienMyNuoc+
-tienMyXao+
-tienKimbap+
-tienXucxich+
-tienTrung+
-tienKem+
-tienSnack+
-tienThuoc;
+                        // chỉ tính combo cho sting vàng, pepsi, aqua
+                        if (/STING VANG|PEPSI|AQUA/i.test(ten)) {
 
-let tong = tongBaoCao || tongAI;
+                            let chaiTinhTien = Math.round(tien / 12000);
+                            let chaiCombo = soLuong - chaiTinhTien;
 
-let kiemTra="";
+                            if (chaiCombo > 0) {
+                                comboNuoc10 += chaiCombo;
+                            }
 
-if(tongBaoCao && tongBaoCao!==tongAI){
-kiemTra=`⚠️ Phát hiện AI tính sai doanh thu
+                        }
+
+                    }
+                    else if (gia <= 14000) { nuoc12 += soLuong; tien12 += tien; }
+                    else if (gia <= 15000) { nuoc15 += soLuong; tien15 += tien; }
+                    else { nuoc18 += soLuong; tien18 += tien; }
+
+                }
+
+
+                // ===== MỲ =====
+                else if (ten.includes("MY") || ten.includes("MỲ")) {
+
+                    if (ten.includes("XAO")) {
+                        myXao += soLuong;
+                        tienMyXao += soLuong * 20000;
+                    } else {
+                        myNuoc += soLuong;
+                        tienMyNuoc += soLuong * 10000;
+                    }
+
+                    // trứng kèm mỳ
+                    if (/TRUNG|TRỨNG|OP LA|ỐP LA|LUOT|LUỘC/i.test(ten)) {
+                        trung += soLuong;
+                        tienTrung += soLuong * 10000;
+                    }
+
+                    // xúc xích kèm mỳ
+                    if (/XUC XICH|XÚC XÍCH/i.test(ten)) {
+                        xucxich += soLuong;
+                        tienXucxich += soLuong * 10000;
+                    }
+
+                }
+
+
+                // ===== TRỨNG RIÊNG =====
+                else if (/TRUNG|TRỨNG|OP LA|ỐP LA|LUOT|LUỘC/i.test(ten)) {
+                    trung += soLuong;
+                    tienTrung += soLuong * 10000;
+                }
+
+
+                // ===== KIMBAP =====
+                else if (ten.includes("KIMBAP")) {
+                    kimbap += soLuong;
+                    tienKimbap += soLuong * 20000;
+                }
+
+
+                // ===== XÚC XÍCH =====
+                else if (/XUC XICH|XÚC XÍCH/i.test(ten)) {
+                    xucxich += soLuong;
+                    tienXucxich += tien;
+                }
+
+
+                // ===== KEM =====
+                else if (ten.includes("KEM")) {
+                    kem += soLuong;
+                    tienKem += soLuong * 15000;
+                }
+
+
+                // ===== SNACK =====
+                else if (/BIM|SNACK/i.test(ten)) {
+                    snack += soLuong;
+                    tienSnack += tien;
+                }
+
+
+                // ===== THUỐC =====
+                else if (/THUOC|THUỐC/i.test(ten)) {
+                    thuoc += soLuong;
+                    tienThuoc += soLuong * 25000;
+                }
+
+            }
+
+            let tongMy = myNuoc + myXao;
+            let tienTongMy = tienMyNuoc + tienMyXao;
+
+            let tongAI =
+                tien10 +
+                tien12 +
+                tien15 +
+                tien18 +
+                tienMyNuoc +
+                tienMyXao +
+                tienKimbap +
+                tienXucxich +
+                tienTrung +
+                tienKem +
+                tienSnack +
+                tienThuoc;
+
+            let tong = tongBaoCao || tongAI;
+
+            let kiemTra = "";
+
+            if (tongBaoCao && tongBaoCao !== tongAI) {
+                kiemTra = `⚠️ Phát hiện AI tính sai doanh thu
 🚫 Hãy báo cho Đại ngay!
 ✅ Tính tay tạm đi để không bị thiếu hàng
 📄 Tổng báo cáo: ${tongBaoCao.toLocaleString()} đ
 🤖 AI tính sai thành: ${tongAI.toLocaleString()} đ
 
 `;
-}
+            }
 
-return `${kiemTra}📊 PHÂN TÍCH DOANH THU
+            return `${kiemTra}📊 PHÂN TÍCH DOANH THU
 ----------------------------
 🥤 Nước 12k : ${nuoc10} món - ${tien10.toLocaleString()} đ
 🥤 Nước 14k : ${nuoc12} món - ${tien12.toLocaleString()} đ
@@ -434,142 +721,142 @@ return `${kiemTra}📊 PHÂN TÍCH DOANH THU
 
 💰 TỔNG CỘNG    :${tongAI.toLocaleString()} đ
 ----------------------------`;
-}
+        }
 
-function resetAll(){
-    // tắt mode
-    kiemSoBanMode = false;
-    kiemTienMode = false;
+        function resetAll() {
+            // tắt mode
+            kiemSoBanMode = false;
+            kiemTienMode = false;
 
-    // reset step
-    kiemStep = 0;
-    kiemTienStep = 0;
+            // reset step
+            kiemStep = 0;
+            kiemTienStep = 0;
 
-    // reset kiểm sổ
-    tongMyTam = 0;
-    tongNuoc10Tam = 0;
-    tongTien = 0;
-    tienDoAn = 0;
-    tienMay = 0;
+            // reset kiểm sổ
+            tongMyTam = 0;
+            tongNuoc10Tam = 0;
+            tongTien = 0;
+            tienDoAn = 0;
+            tienMay = 0;
 
-    // reset kiểm tiền
-    soDuCuoi = 0;
-    soDuTruoc = 0;
-    tienMomo = 0;
+            // reset kiểm tiền
+            soDuCuoi = 0;
+            soDuTruoc = 0;
+            tienMomo = 0;
 
-    // reset trạng thái phụ
-    dangNhapComboNuoc10 = false;
-    dangNhapMyNuoc = false;
+            // reset trạng thái phụ
+            dangNhapComboNuoc10 = false;
+            dangNhapMyNuoc = false;
 
-    dangMenuKetThuc = false;
-}
+            dangMenuKetThuc = false;
+        }
 
-function send(){
+        function send() {
 
-let text=input.value.trim();
-if(!text) return;
+            let text = input.value.trim();
+            if (!text) return;
 
-addMsg(text,"user");
+            addMsg(text, "user");
 
-// ===== KIỂM TRA LỆNH KHÔNG TỒN TẠI =====
-if(text.startsWith("/") 
-    && text !== "/kiemsoban"
-    && text !== "/kiemtien"
-    && text !== "/help"
-    && text !== "/thoat"
-    && text !== "/back"
-    && text !== "//"
-    && text !== "/load"
-){
-    addMsg("❌ Lệnh không tồn tại\n📌 Gõ /help để xem hướng dẫn","bot");
+            // ===== KIỂM TRA LỆNH KHÔNG TỒN TẠI =====
+            if (text.startsWith("/")
+                && text !== "/kiemsoban"
+                && text !== "/kiemtien"
+                && text !== "/help"
+                && text !== "/thoat"
+                && text !== "/back"
+                && text !== "//"
+                && text !== "/load"
+            ) {
+                addMsg("❌ Lệnh không tồn tại\n📌 Gõ /help để xem hướng dẫn", "bot");
 
-    input.value="";
+                input.value = "";
 
-    // ❗ CHỈ return nếu KHÔNG đang ở mode
-    if(!kiemSoBanMode && !kiemTienMode){
-        return;
-    }
-}
+                // ❗ CHỈ return nếu KHÔNG đang ở mode
+                if (!kiemSoBanMode && !kiemTienMode) {
+                    return;
+                }
+            }
 
-// ===== LỆNH QUAY LẠI =====
-if(text=="/back" || text=="//"){
+            // ===== LỆNH QUAY LẠI =====
+            if (text == "/back" || text == "//") {
 
-addMsg("↩️ Đã quay lại nhập lại từ đầu","bot");
+                addMsg("↩️ Đã quay lại nhập lại từ đầu", "bot");
 
-// ===== nếu đang kiểm sổ =====
-if(kiemSoBanMode){
+                // ===== nếu đang kiểm sổ =====
+                if (kiemSoBanMode) {
 
-    kiemStep = -1;
-    tongTien = 0;
-    tienDoAn = 0;
-    tongMyTam = 0;
-    tongNuoc10Tam = 0;
+                    kiemStep = -1;
+                    tongTien = 0;
+                    tienDoAn = 0;
+                    tongMyTam = 0;
+                    tongNuoc10Tam = 0;
 
-    setTimeout(()=>{
-        addMsg("💰 Nhập số tiền dịch vụ ở trên máy","bot");
-    },300);
+                    setTimeout(() => {
+                        addMsg("💰 Nhập số tiền dịch vụ ở trên máy", "bot");
+                    }, 300);
 
-}
+                }
 
-// ===== nếu đang kiểm tiền =====
-else if(kiemTienMode){
+                // ===== nếu đang kiểm tiền =====
+                else if (kiemTienMode) {
 
-    kiemTienStep = 1;
-    soDuCuoi = 0;
-    soDuTruoc = 0;
-    tienMomo = 0;
+                    kiemTienStep = 1;
+                    soDuCuoi = 0;
+                    soDuTruoc = 0;
+                    tienMomo = 0;
 
-    setTimeout(()=>{
-        addMsg("👉 Nhập số dư cuối","bot");
-    },300);
+                    setTimeout(() => {
+                        addMsg("👉 Nhập số dư cuối", "bot");
+                    }, 300);
 
-}
+                }
 
-input.value="";
-return;
-}
+                input.value = "";
+                return;
+            }
 
-// ===== LỆNH THOÁT =====
-if(text=="/thoat"){
+            // ===== LỆNH THOÁT =====
+            if (text == "/thoat") {
 
-// reset tất cả mode
-kiemSoBanMode = false;
-kiemTienMode = false;
-dangMenuKetThuc = false;
+                // reset tất cả mode
+                kiemSoBanMode = false;
+                kiemTienMode = false;
+                dangMenuKetThuc = false;
 
-// reset step
-kiemStep = 0;
-kiemTienStep = 0;
+                // reset step
+                kiemStep = 0;
+                kiemTienStep = 0;
 
-// reset dữ liệu kiểm sổ
-tongMyTam = 0;
-tongNuoc10Tam = 0;
-tongTien = 0;
-tienDoAn = 0;
+                // reset dữ liệu kiểm sổ
+                tongMyTam = 0;
+                tongNuoc10Tam = 0;
+                tongTien = 0;
+                tienDoAn = 0;
 
-// reset dữ liệu kiểm tiền
-soDuCuoi = 0;
-soDuTruoc = 0;
-tienMomo = 0;
+                // reset dữ liệu kiểm tiền
+                soDuCuoi = 0;
+                soDuTruoc = 0;
+                tienMomo = 0;
 
-// reset trạng thái phụ
-dangNhapComboNuoc10 = false;
-dangNhapMyNuoc = false;
+                // reset trạng thái phụ
+                dangNhapComboNuoc10 = false;
+                dangNhapMyNuoc = false;
 
-addMsg("❌ Đã thoát toàn bộ chế độ\n📊 Trở về phân tích doanh thu","bot");
+                addMsg("❌ Đã thoát toàn bộ chế độ\n📊 Trở về phân tích doanh thu", "bot");
 
-input.value="";
-return;
-}
+                input.value = "";
+                return;
+            }
 
-// ===== LỆNH HELP =====
-if(text=="/help"){
+            // ===== LỆNH HELP =====
+            if (text == "/help") {
 
-    // reset về trạng thái thường
-    resetAll();
+                // reset về trạng thái thường
+                resetAll();
 
-    addMsg(
-`📖 HƯỚNG DẪN SỬ DỤNG
+                addMsg(
+                    `📖 HƯỚNG DẪN SỬ DỤNG
 ━━━━━━━━━━━━━━━━━━━
 📊 MẶC ĐỊNH
 → Dán hàng bán cho AI phân tích
@@ -593,213 +880,216 @@ if(text=="/help"){
 🔄 /load
 → Để tải lại trang cho gọn
 ━━━━━━━━━━━━━━━━━━━`,
-"bot");
+                    "bot");
 
-    input.value="";
-    return;
-}
+                input.value = "";
+                return;
+            }
 
-// ===== LỆNH LOAD LẠI TRANG =====
-if(text=="/load"){
+            // ===== LỆNH LOAD LẠI TRANG =====
+            if (text == "/load") {
 
-    addMsg("🔄 Đang tải lại trang...","bot");
+                addMsg("🔄 Đang tải lại trang...", "bot");
 
-    setTimeout(()=>{
-        location.reload();
-    },500);
+                // đánh dấu bỏ qua loading
+                localStorage.setItem("skipLoad", "true");
 
-    input.value="";
-    return;
-}
+                setTimeout(() => {
+                    location.reload();
+                }, 300);
 
-// ===== LỆNH KIỂM SỔ BÁN =====
-if(text=="/kiemsoban"){
+                input.value = "";
+                return;
+            }
 
-    resetAll(); // 💥 QUAN TRỌNG
+            // ===== LỆNH KIỂM SỔ BÁN =====
+            if (text == "/kiemsoban") {
 
-    kiemSoBanMode = true;
-    kiemStep = -1;
+                resetAll(); // 💥 QUAN TRỌNG
 
-    addMsg("🔄 Đã chuyển sang chế độ KIỂM SỔ","bot");
+                kiemSoBanMode = true;
+                kiemStep = -1;
 
-    setTimeout(()=>{
-        addMsg("💰 Nhập số tiền dịch vụ ở trên máy","bot");
-    },300);
+                addMsg("🔄 Đã chuyển sang chế độ KIỂM SỔ", "bot");
 
-    input.value="";
-    return;
-}
+                setTimeout(() => {
+                    addMsg("💰 Nhập số tiền dịch vụ ở trên máy", "bot");
+                }, 300);
 
-// ===== LỆNH KIỂM TIỀN =====
-if(text=="/kiemtien"){
+                input.value = "";
+                return;
+            }
 
-    resetAll(); // 💥 QUAN TRỌNG
+            // ===== LỆNH KIỂM TIỀN =====
+            if (text == "/kiemtien") {
 
-    kiemTienMode = true;
-    kiemTienStep = 1;
+                resetAll(); // 💥 QUAN TRỌNG
 
-    addMsg("🔄 Đã chuyển sang chế độ KIỂM TIỀN","bot");
+                kiemTienMode = true;
+                kiemTienStep = 1;
 
-    setTimeout(()=>{
-        addMsg("👉 Nhập số dư cuối","bot");
-    },300);
+                addMsg("🔄 Đã chuyển sang chế độ KIỂM TIỀN", "bot");
 
-    input.value="";
-    return;
-}
+                setTimeout(() => {
+                    addMsg("👉 Nhập số dư cuối", "bot");
+                }, 300);
 
-// ===== MENU SAU KHI KIỂM XONG =====
-if(dangMenuKetThuc){
+                input.value = "";
+                return;
+            }
 
-// ===== MENU KIỂM SỔ =====
-if(dangMenuKetThuc === true){
+            // ===== MENU SAU KHI KIỂM XONG =====
+            if (dangMenuKetThuc) {
 
-if(text==="1"){
-dangMenuKetThuc=false;
-kiemSoBanMode=true;
-kiemStep=-1;
-tongTien=0;
+                // ===== MENU KIỂM SỔ =====
+                if (dangMenuKetThuc === true) {
 
-addMsg("🔄 Bắt đầu kiểm sổ mới","bot");
+                    if (text === "1") {
+                        dangMenuKetThuc = false;
+                        kiemSoBanMode = true;
+                        kiemStep = -1;
+                        tongTien = 0;
 
-setTimeout(()=>{
-addMsg("💰 Nhập số tiền dịch vụ ở trên máy","bot");
-},300);
+                        addMsg("🔄 Bắt đầu kiểm sổ mới", "bot");
 
-input.value="";
-return;
-}
+                        setTimeout(() => {
+                            addMsg("💰 Nhập số tiền dịch vụ ở trên máy", "bot");
+                        }, 300);
 
-if(text==="2"){
-    dangMenuKetThuc=false;
+                        input.value = "";
+                        return;
+                    }
 
-    // reset toàn bộ trạng thái
-    kiemSoBanMode = false;
-    kiemTienMode = false;
+                    if (text === "2") {
+                        dangMenuKetThuc = false;
 
-    kiemStep = 0;
-    kiemTienStep = 0;
+                        // reset toàn bộ trạng thái
+                        kiemSoBanMode = false;
+                        kiemTienMode = false;
 
-    tongNuoc10Tam = 0;
-    tongMyTam = 0;
+                        kiemStep = 0;
+                        kiemTienStep = 0;
 
-    dangNhapComboNuoc10 = false;
-    dangNhapMyNuoc = false;
+                        tongNuoc10Tam = 0;
+                        tongMyTam = 0;
 
-    addMsg("👋 Đã thoát chế độ kiểm sổ","bot");
+                        dangNhapComboNuoc10 = false;
+                        dangNhapMyNuoc = false;
 
-    input.value="";
-    return;
-}
-}
+                        addMsg("👋 Đã thoát chế độ kiểm sổ", "bot");
 
-// ===== MENU KIỂM TIỀN =====
-if(dangMenuKetThuc === "kiemtien"){
+                        input.value = "";
+                        return;
+                    }
+                }
 
-if(text==="1"){
-dangMenuKetThuc=false;
+                // ===== MENU KIỂM TIỀN =====
+                if (dangMenuKetThuc === "kiemtien") {
 
-kiemTienMode=true;
-kiemTienStep=1;
+                    if (text === "1") {
+                        dangMenuKetThuc = false;
 
-addMsg("🔄 Bắt đầu kiểm tiền mới","bot");
+                        kiemTienMode = true;
+                        kiemTienStep = 1;
 
-setTimeout(()=>{
-addMsg("👉 Nhập số dư cuối","bot");
-},300);
+                        addMsg("🔄 Bắt đầu kiểm tiền mới", "bot");
 
-input.value="";
-return;
-}
+                        setTimeout(() => {
+                            addMsg("👉 Nhập số dư cuối", "bot");
+                        }, 300);
 
-if(text==="2"){
-    dangMenuKetThuc=false;
+                        input.value = "";
+                        return;
+                    }
 
-    kiemTienMode = false;
-    kiemSoBanMode = false;
+                    if (text === "2") {
+                        dangMenuKetThuc = false;
 
-    kiemStep = 0;
-    kiemTienStep = 0;
+                        kiemTienMode = false;
+                        kiemSoBanMode = false;
 
-    addMsg("👋 Đã thoát chế độ kiểm tiền","bot");
+                        kiemStep = 0;
+                        kiemTienStep = 0;
 
-    input.value="";
-    return;
-}
-}
+                        addMsg("👋 Đã thoát chế độ kiểm tiền", "bot");
 
-addMsg("⚠️ Vui lòng nhập 1 hoặc 2","bot");
+                        input.value = "";
+                        return;
+                    }
+                }
 
-input.value="";
-return;
-}
+                addMsg("⚠️ Vui lòng nhập 1 hoặc 2", "bot");
 
-// ===== CHẾ ĐỘ KIỂM TIỀN =====
-if(kiemTienMode){
+                input.value = "";
+                return;
+            }
 
-    let so = parseFloat(text);
+            // ===== CHẾ ĐỘ KIỂM TIỀN =====
+            if (kiemTienMode) {
 
-    if(isNaN(so)){
-        addMsg("⚠️ Vui lòng nhập số hợp lệ","bot");
-        input.value="";
-        return;
-    }
+                let so = parseFloat(text);
 
-    // BƯỚC 1: SỐ DƯ CUỐI
-    if(kiemTienStep === 1){
-        soDuCuoi = so;
-        kiemTienStep = 2;
+                if (isNaN(so)) {
+                    addMsg("⚠️ Vui lòng nhập số hợp lệ", "bot");
+                    input.value = "";
+                    return;
+                }
 
-        addMsg(`💰 Số dư cuối: ${soDuCuoi}`,"bot");
+                // BƯỚC 1: SỐ DƯ CUỐI
+                if (kiemTienStep === 1) {
+                    soDuCuoi = so;
+                    kiemTienStep = 2;
 
-        setTimeout(()=>{
-            addMsg("👉 Nhập số dư ca trước","bot");
-        },300);
+                    addMsg(`💰 Số dư cuối: ${soDuCuoi}`, "bot");
 
-        input.value="";
-        return;
-    }
+                    setTimeout(() => {
+                        addMsg("👉 Nhập số dư ca trước", "bot");
+                    }, 300);
 
-    // BƯỚC 2: SỐ DƯ CA TRƯỚC
-    if(kiemTienStep === 2){
-        soDuTruoc = so;
-        kiemTienStep = 3;
+                    input.value = "";
+                    return;
+                }
 
-        addMsg(`💰 Số dư ca trước: ${soDuTruoc}`,"bot");
+                // BƯỚC 2: SỐ DƯ CA TRƯỚC
+                if (kiemTienStep === 2) {
+                    soDuTruoc = so;
+                    kiemTienStep = 3;
 
-        setTimeout(()=>{
-            addMsg("👉 Nhập số tiền trong MoMo","bot");
-        },300);
+                    addMsg(`💰 Số dư ca trước: ${soDuTruoc}`, "bot");
 
-        input.value="";
-        return;
-    }
+                    setTimeout(() => {
+                        addMsg("👉 Nhập số tiền trong MoMo", "bot");
+                    }, 300);
 
-    // BƯỚC 3: MOMO
-    if(kiemTienStep === 3){
-        tienMomo = so;
-        kiemTienStep = 4;
+                    input.value = "";
+                    return;
+                }
 
-        addMsg(`📱 Tiền MoMo: ${tienMomo}`,"bot");
+                // BƯỚC 3: MOMO
+                if (kiemTienStep === 3) {
+                    tienMomo = so;
+                    kiemTienStep = 4;
 
-        setTimeout(()=>{
-            addMsg("👉 Nhập tổng doanh thu","bot");
-        },300);
+                    addMsg(`📱 Tiền MoMo: ${tienMomo}`, "bot");
 
-        input.value="";
-        return;
-    }
+                    setTimeout(() => {
+                        addMsg("👉 Nhập tổng doanh thu", "bot");
+                    }, 300);
 
-    // BƯỚC 4: TÍNH TOÁN CHUẨN
-    if(kiemTienStep === 4){
-        let tongDoanhThu = so;
+                    input.value = "";
+                    return;
+                }
 
-        let ketqua = soDuCuoi - soDuTruoc;
-        let tongMoi = ketqua + tienMomo;
-        let tienMat = tongDoanhThu - tongMoi;
+                // BƯỚC 4: TÍNH TOÁN CHUẨN
+                if (kiemTienStep === 4) {
+                    let tongDoanhThu = so;
 
-        addMsg(
-`📊 CÔNG THỨC
+                    let ketqua = soDuCuoi - soDuTruoc;
+                    let tongMoi = ketqua + tienMomo;
+                    let tienMat = tongDoanhThu - tongMoi;
+
+                    addMsg(
+                        `📊 CÔNG THỨC
 ------------------------
 💰 Tổng doanh thu : ${tongDoanhThu}
 
@@ -810,294 +1100,343 @@ if(kiemTienMode){
 
 💵 Tiền mặt       : ${tongDoanhThu} - ${tongMoi} = ${tienMat}
 ------------------------`,
-        "bot");
+                        "bot");
 
-        // 👉 thêm dòng này
-setTimeout(()=>{
-    addMsg(
-`✅ KẾT QUẢ
+                    // 👉 thêm dòng này
+                    setTimeout(() => {
+                        addMsg(
+                            `✅ KẾT QUẢ
 ------------------------
 Doanh thu: ${tongDoanhThu}
 Chuyển khoản: ${tienMomo} + ${ketqua}
 Tiền mặt: ${tienMat}
 ------------------------`, "bot");
-},300);
+                    }, 300);
 
-// hiển thị menu giống kiểm sổ
-setTimeout(()=>{
-addMsg(`📋 Bạn muốn làm gì tiếp?
+                    // hiển thị menu giống kiểm sổ
+                    setTimeout(() => {
+                        addMsg(`📋 Bạn muốn làm gì tiếp?
 
 1️⃣ Kiểm tiền lại từ đầu
-2️⃣ Thoát chế độ kiểm tiền`,"bot");
+2️⃣ Thoát chế độ kiểm tiền`, "bot");
 
-dangMenuKetThuc = "kiemtien";
-},300);
+                        dangMenuKetThuc = "kiemtien";
+                    }, 300);
 
-// reset step nhưng giữ menu
-kiemTienMode = false;
-kiemTienStep = 0;
+                    // reset step nhưng giữ menu
+                    kiemTienMode = false;
+                    kiemTienStep = 0;
 
-input.value="";
-return;
-    }
-}
-if(kiemSoBanMode){
+                    input.value = "";
+                    return;
+                }
+            }
+            if (kiemSoBanMode) {
 
-// bước nhập tiền dịch vụ
-if(kiemStep==-1){
+                // bước nhập tiền dịch vụ
+                if (kiemStep == -1) {
 
-let so=parseFloat(text);
+                    let so = parseFloat(text);
 
-if(isNaN(so)){
+                    if (isNaN(so)) {
 
-addMsg("⚠️ Bạn phải nhập số tiền dịch vụ hợp lệ (chỉ nhập số)","bot");
+                        addMsg("⚠️ Bạn phải nhập số tiền dịch vụ hợp lệ (chỉ nhập số)", "bot");
 
-input.value="";
-return;
+                        input.value = "";
+                        return;
 
-}
+                    }
 
-let tien=so*1000;
+                    let tien = so * 1000;
 
-tienMay = tien;   // tiền nhập trên máy
-tienDichVu = tien; // tiền dịch vụ
-tongTien = 0;
-tienDoAn = 0;
+                    tienMay = tien;   // tiền nhập trên máy
+                    tienDichVu = tien; // tiền dịch vụ
+                    tongTien = 0;
+                    tienDoAn = 0;
 
-addMsg(`💰 Tiền dịch vụ: ${tien.toLocaleString()} đ`,"bot");
+                    addMsg(`💰 Tiền dịch vụ: ${tien.toLocaleString()} đ`, "bot");
 
-kiemStep=0;
+                    kiemStep = 0;
 
-setTimeout(()=>{
-addMsg(`${kiemItems[0].name}: nhập số lượng`,"bot");
-},300);
+                    setTimeout(() => {
+                        addMsg(`${kiemItems[0].name}: nhập số lượng`, "bot");
+                    }, 300);
 
-input.value="";
-return;
+                    input.value = "";
+                    return;
 
-}
+                }
 
-let so=parseInt(text);
+                let so = parseInt(text);
 
-if(isNaN(so)){
-addMsg(`⚠️ Bạn phải nhập số lượng hợp lệ.
-👉 Vui lòng nhập lại: ${kiemItems[kiemStep].name}`,"bot");
+                if (isNaN(so)) {
+                    addMsg(`⚠️ Bạn phải nhập số lượng hợp lệ.
+👉 Vui lòng nhập lại: ${kiemItems[kiemStep].name}`, "bot");
 
-input.value="";
-return;
-}
-// các bước hàng hóa
-// combo nước 10k
-if(tongNuoc10Tam>0){
+                    input.value = "";
+                    return;
+                }
+                // các bước hàng hóa
+                // combo nước 10k
+                if (tongNuoc10Tam > 0) {
 
-let combo=so;
-let tinhTien=tongNuoc10Tam-combo;
+                    let combo = so;
+                    let tinhTien = tongNuoc10Tam - combo;
 
-let tien=tinhTien*12000;
+                    let tien = tinhTien * 12000;
 
-tongTien += tien;
-tienDoAn += tien;
+                    tongTien += tien;
+                    tienDoAn += tien;
 
-addMsg(`🥤 Nước 12k tính tiền: ${tinhTien} → ${tien.toLocaleString()} đ`,"bot");
+                    addMsg(`🥤 Nước 12k tính tiền: ${tinhTien} → ${tien.toLocaleString()} đ`, "bot");
 
-tongNuoc10Tam=0;
+                    tongNuoc10Tam = 0;
 
-setTimeout(()=>{
-addMsg(`${kiemItems[kiemStep].name}: nhập số lượng`,"bot");
-},300);
+                    setTimeout(() => {
+                        addMsg(`${kiemItems[kiemStep].name}: nhập số lượng`, "bot");
+                    }, 300);
 
-input.value="";
-return;
-}
-
-
-// mỳ nước / mỳ xào
-if(tongMyTam>0){
-
-let myNuoc=so;
-let myXao=tongMyTam-myNuoc;
-
-let tienNuoc=myNuoc*10000;
-let tienXao=myXao*20000;
-
-tongTien+=tienNuoc+tienXao;
-tienDoAn+=tienNuoc+tienXao;
-
-addMsg(`🍜 Mỳ nước: ${myNuoc} → ${tienNuoc.toLocaleString()} đ`,"bot");
-addMsg(`🍜 Mỳ xào: ${myXao} → ${tienXao.toLocaleString()} đ`,"bot");
-
-tongMyTam=0;
-
-setTimeout(()=>{
-addMsg(`${kiemItems[kiemStep].name}: nhập số lượng`,"bot");
-},300);
-
-input.value="";
-return;
-}
-
-if(!isNaN(so)){
-
-let item=kiemItems[kiemStep];
+                    input.value = "";
+                    return;
+                }
 
 
-// ===== NƯỚC 10K =====
-if(item.type==="nuoc10"){
+                // mỳ nước / mỳ xào
+                if (tongMyTam > 0) {
 
-tongNuoc10Tam=so;
-dangNhapComboNuoc10=true;
+                    let myNuoc = so;
+                    let myXao = tongMyTam - myNuoc;
 
-addMsg(`🥤 Nước 12k tổng: ${so}`,"bot");
+                    let tienNuoc = myNuoc * 10000;
+                    let tienXao = myXao * 20000;
 
-setTimeout(()=>{
-addMsg("🎁 Nước 12k combo 0đ: nhập số lượng","bot");
-},300);
+                    tongTien += tienNuoc + tienXao;
+                    tienDoAn += tienNuoc + tienXao;
 
-kiemStep++;
-input.value="";
-return;
+                    addMsg(`🍜 Mỳ nước: ${myNuoc} → ${tienNuoc.toLocaleString()} đ`, "bot");
+                    addMsg(`🍜 Mỳ xào: ${myXao} → ${tienXao.toLocaleString()} đ`, "bot");
 
-}
+                    tongMyTam = 0;
 
+                    setTimeout(() => {
+                        addMsg(`${kiemItems[kiemStep].name}: nhập số lượng`, "bot");
+                    }, 300);
 
-// ===== MỲ =====
-if(item.type==="my"){
+                    input.value = "";
+                    return;
+                }
 
-tongMyTam=so;
-dangNhapMyNuoc=true;
+                if (!isNaN(so)) {
 
-addMsg(`🍜 Tổng mỳ: ${so}`,"bot");
-
-setTimeout(()=>{
-addMsg("🍜 Trong đó mỳ nước: nhập số lượng","bot");
-},300);
-
-kiemStep++;
-input.value="";
-return;
-
-}
+                    let item = kiemItems[kiemStep];
 
 
-// ===== TÍNH TIỀN BÌNH THƯỜNG =====
-let tien=item.gia*so;
+                    // ===== NƯỚC 10K =====
+                    if (item.type === "nuoc10") {
 
-tongTien+=tien;
-tienDoAn+=tien;
+                        tongNuoc10Tam = so;
+                        dangNhapComboNuoc10 = true;
 
-addMsg(`${item.name}: ${so} → ${tien.toLocaleString()} đ`,"bot");
+                        addMsg(`🥤 Nước 12k tổng: ${so}`, "bot");
 
-kiemStep++;
+                        setTimeout(() => {
+                            addMsg("🎁 Nước 12k combo 0đ: nhập số lượng", "bot");
+                        }, 300);
 
-if(kiemStep<kiemItems.length){
+                        kiemStep++;
+                        input.value = "";
+                        return;
 
-setTimeout(()=>{
-addMsg(`${kiemItems[kiemStep].name}: nhập số lượng`,"bot");
-},300);
+                    }
 
-}else{
 
-setTimeout(()=>{
-let tienDaTinh = tienDoAn;
-let chenhlech = tienDaTinh - tienMay;
+                    // ===== MỲ =====
+                    if (item.type === "my") {
 
-addMsg(`💰 Tiền máy: ${tienMay.toLocaleString()} đ`,"bot");
-addMsg(`💵 Tiền thực tế: ${tienDaTinh.toLocaleString()} đ`,"bot");
+                        tongMyTam = so;
+                        dangNhapMyNuoc = true;
 
-if(chenhlech === 0){
-addMsg(`✅ Đủ tiền`,"bot");
-}
-else if(chenhlech > 0){
-addMsg(`⚠️ Thiếu: ${chenhlech.toLocaleString()} đ`,"bot");
-}
-else{
-addMsg(`💰 Dư: ${Math.abs(chenhlech).toLocaleString()} đ`,"bot");
-}
+                        addMsg(`🍜 Tổng mỳ: ${so}`, "bot");
 
-setTimeout(()=>{
-addMsg(`📋 Bạn muốn làm gì tiếp?
+                        setTimeout(() => {
+                            addMsg("🍜 Trong đó mỳ nước: nhập số lượng", "bot");
+                        }, 300);
+
+                        kiemStep++;
+                        input.value = "";
+                        return;
+
+                    }
+
+
+                    // ===== TÍNH TIỀN BÌNH THƯỜNG =====
+                    let tien = item.gia * so;
+
+                    tongTien += tien;
+                    tienDoAn += tien;
+
+                    addMsg(`${item.name}: ${so} → ${tien.toLocaleString()} đ`, "bot");
+
+                    kiemStep++;
+
+                    if (kiemStep < kiemItems.length) {
+
+                        setTimeout(() => {
+                            addMsg(`${kiemItems[kiemStep].name}: nhập số lượng`, "bot");
+                        }, 300);
+
+                    } else {
+
+                        setTimeout(() => {
+                            let tienDaTinh = tienDoAn;
+                            let chenhlech = tienDaTinh - tienMay;
+
+                            addMsg(`💰 Tiền máy: ${tienMay.toLocaleString()} đ`, "bot");
+                            addMsg(`💵 Tiền thực tế: ${tienDaTinh.toLocaleString()} đ`, "bot");
+
+                            if (chenhlech === 0) {
+                                addMsg(`✅ Đủ tiền`, "bot");
+                            }
+                            else if (chenhlech > 0) {
+                                addMsg(`⚠️ Thiếu: ${chenhlech.toLocaleString()} đ`, "bot");
+                            }
+                            else {
+                                addMsg(`💰 Dư: ${Math.abs(chenhlech).toLocaleString()} đ`, "bot");
+                            }
+
+                            setTimeout(() => {
+                                addMsg(`📋 Bạn muốn làm gì tiếp?
 
 1️⃣ Kiểm sổ lại từ đầu
-2️⃣ Thoát chế độ kiểm sổ`,"bot");
+2️⃣ Thoát chế độ kiểm sổ`, "bot");
 
-dangMenuKetThuc=true;
+                                dangMenuKetThuc = true;
 
-},300);
-},300);
+                            }, 300);
+                        }, 300);
 
-kiemSoBanMode=false;
+                        kiemSoBanMode = false;
 
-}
+                    }
 
-}
+                }
 
-input.value="";
-return;
+                input.value = "";
+                return;
 
-}
-// ===== NHẬP COMBO NƯỚC 10K =====
-if(dangNhapComboNuoc10){
+            }
+            // ===== NHẬP COMBO NƯỚC 10K =====
+            if (dangNhapComboNuoc10) {
 
-let combo=so;
-let tinhTien=tongNuoc10Tam-combo;
+                let combo = so;
+                let tinhTien = tongNuoc10Tam - combo;
 
-let tien=tinhTien*12000;
+                let tien = tinhTien * 12000;
 
-tongTien+=tien;
+                tongTien += tien;
 
-addMsg(`🥤 Nước 12k tính tiền: ${tinhTien} → ${tien.toLocaleString()} đ`,"bot");
+                addMsg(`🥤 Nước 12k tính tiền: ${tinhTien} → ${tien.toLocaleString()} đ`, "bot");
 
-dangNhapComboNuoc10=false;
-tongNuoc10Tam=0;
+                dangNhapComboNuoc10 = false;
+                tongNuoc10Tam = 0;
 
-setTimeout(()=>{
-addMsg(`${kiemItems[kiemStep].name}: nhập số lượng`,"bot");
-},300);
+                setTimeout(() => {
+                    addMsg(`${kiemItems[kiemStep].name}: nhập số lượng`, "bot");
+                }, 300);
 
-input.value="";
-return;
-}
+                input.value = "";
+                return;
+            }
 
 
-// ===== NHẬP MỲ NƯỚC =====
-if(dangNhapMyNuoc){
+            // ===== NHẬP MỲ NƯỚC =====
+            if (dangNhapMyNuoc) {
 
-let myNuoc=so;
-let myXao=tongMyTam-myNuoc;
+                let myNuoc = so;
+                let myXao = tongMyTam - myNuoc;
 
-let tienNuoc=myNuoc*10000;
-let tienXao=myXao*20000;
+                let tienNuoc = myNuoc * 10000;
+                let tienXao = myXao * 20000;
 
-tongTien+=tienNuoc+tienXao;
+                tongTien += tienNuoc + tienXao;
 
-addMsg(`🍜 Mỳ nước: ${myNuoc} → ${tienNuoc.toLocaleString()} đ`,"bot");
-addMsg(`🍜 Mỳ xào: ${myXao} → ${tienXao.toLocaleString()} đ`,"bot");
+                addMsg(`🍜 Mỳ nước: ${myNuoc} → ${tienNuoc.toLocaleString()} đ`, "bot");
+                addMsg(`🍜 Mỳ xào: ${myXao} → ${tienXao.toLocaleString()} đ`, "bot");
 
-dangNhapMyNuoc=false;
-tongMyTam=0;
+                dangNhapMyNuoc = false;
+                tongMyTam = 0;
 
-setTimeout(()=>{
-addMsg(`${kiemItems[kiemStep].name}: nhập số lượng`,"bot");
-},300);
+                setTimeout(() => {
+                    addMsg(`${kiemItems[kiemStep].name}: nhập số lượng`, "bot");
+                }, 300);
 
-input.value="";
-return;
-}
+                input.value = "";
+                return;
+            }
 
-if(kiemSoBanMode){
-   return; // KHÔNG cần input.value=""
-}
+            if (kiemSoBanMode) {
+                return; // KHÔNG cần input.value=""
+            }
 
-// ===== PHÂN TÍCH DOANH THU (CHẾ ĐỘ BÌNH THƯỜNG) =====
-dangMenuKetThuc = false;
-let result = phanTichDoanhThu(text);
+            // ===== PHÂN TÍCH DOANH THU (CHẾ ĐỘ BÌNH THƯỜNG) =====
+            dangMenuKetThuc = false;
+            let result = phanTichDoanhThu(text);
 
-setTimeout(()=>{
-addMsg(result,"bot");
-},500);
+            setTimeout(() => {
+                addMsg(result, "bot");
+            }, 500);
 
-input.value="";
-}
-</script>
+            input.value = "";
+        }
+        // ===== LOADING EFFECT =====
+        window.addEventListener("load", () => {
+
+            const skip = localStorage.getItem("skipLoad");
+
+            if (skip === "true") {
+                localStorage.removeItem("skipLoad");
+
+                // 🔥 load lại màu từ session
+                let savedTheme = sessionStorage.getItem("themeIndex");
+
+                if (savedTheme !== null) {
+                    currentTheme = parseInt(savedTheme);
+                    let theme = themes[currentTheme];
+
+                    document.documentElement.style.setProperty('--cyan-neon', theme.main);
+                    document.documentElement.style.setProperty('--cyan-glow', theme.glow);
+                }
+
+                document.getElementById("loader").style.display = "none";
+                return;
+            }
+
+            // ❌ F5 hoặc vào link → KHÔNG load màu → dùng mặc định
+
+            setTimeout(() => {
+                document.getElementById("loader").style.opacity = "0";
+                setTimeout(() => {
+                    document.getElementById("loader").style.display = "none";
+                }, 500);
+            }, 1200);
+        });
+        function changeTheme() {
+            currentTheme++;
+
+            if (currentTheme >= themes.length) {
+                currentTheme = 0;
+            }
+
+            let theme = themes[currentTheme];
+
+            // đổi màu
+            document.documentElement.style.setProperty('--cyan-neon', theme.main);
+            document.documentElement.style.setProperty('--cyan-glow', theme.glow);
+
+            // 🔥 CHỈ lưu tạm trong session (không lưu vĩnh viễn)
+            sessionStorage.setItem("themeIndex", currentTheme);
+        }
+    </script>
 </body>
+
 </html>
