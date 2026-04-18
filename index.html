@@ -532,11 +532,12 @@
 
         function phanTichDoanhThu(text) {
 
-            let nuoc10 = 0, tien10 = 0;
-            let comboNuoc10 = 0;
+            let aqua = 0, tienAqua = 0;
             let nuoc12 = 0, tien12 = 0;
+            let comboNuoc10 = 0;
+            let nuoc14 = 0, tien14 = 0;
             let nuoc15 = 0, tien15 = 0;
-            let nuoc18 = 0, tien18 = 0;
+            let nuoc20 = 0, tien20 = 0;
 
             let myNuoc = 0, tienMyNuoc = 0;
             let myXao = 0, tienMyXao = 0;
@@ -558,6 +559,15 @@
                     tongBaoCao = parseInt(tongMatch[1].replace(/,/g, ""));
                 }
 
+                // ===== ĐẾM COMBO TỪ DÒNG CHI TIẾT =====
+                let detailMatch = line.match(/(.*?)\s+\d{2}-[A-Za-z]{3}-\d{4}.*?\s(\d+)\s+([\d,]+)/);
+
+                if (detailMatch) {
+                    let ten = detailMatch[1].toUpperCase();
+                    let soLuong = parseInt(detailMatch[2]);
+                    let tien = parseInt(detailMatch[3].replace(/,/g, ""));
+
+                }
                 if (!line.includes("Tổng cộng:")) continue;
 
                 let match = line.match(/Tổng cộng:\s*(.*?)\s+(\d+)\s+([\d,]+)/i);
@@ -567,34 +577,56 @@
                 let soLuong = parseInt(match[2]);
                 let tien = parseInt(match[3].replace(/,/g, ""));
 
-                let gia = Math.round(tien / soLuong);
+                let gia = tien / soLuong;
 
 
+                // ===== AQUA (NƯỚC 10K RIÊNG) =====
+                if (/AQUA/i.test(ten)) {
+                    aqua += soLuong;
+                    tienAqua += soLuong * 10000;
+                    continue;
+                }
                 // ===== NƯỚC =====
-                if (/STING|PEPSI|COCA|MIRINDA|SPRITE|AQUA|REVIVE|RIVIVE|ROCK|OLONG|O LONG|TRA|TRÀ|COZY|SUA|SỮA|NUTRI|TRAU|HUC|HÚC|BO HUC|BÒ HÚC/i.test(ten)) {
+                if (/STING|PEPSI|COCA|MIRINDA|SPRITE|REVIVE|RIVIVE|ROCK|OLONG|O LONG|TRA|TRÀ|COZY|SUA|SỮA|NUTRI|TRAU|HUC|HÚC|BO HUC|BÒ HÚC/i.test(ten)) {
 
-                    if (gia <= 12000) { // nước 12k (từ 10k)
+                    // ===== CASE ĐẶC BIỆT: có combo lẫn nước tính tiền =====
+                    if (soLuong > 1 && tien > 0 && tien < soLuong * 12000) {
 
-                        nuoc10 += soLuong;
-                        tien10 += tien;
+                        let soChaiTinhTien = Math.round(tien / 12000);
+                        let soChaiCombo = soLuong - soChaiTinhTien;
 
-                        // chỉ tính combo cho sting vàng, pepsi, aqua
-                        if (/STING VANG|PEPSI|AQUA/i.test(ten)) {
+                        nuoc12 += soChaiTinhTien;
+                        tien12 += soChaiTinhTien * 12000;
 
-                            let chaiTinhTien = Math.round(tien / 12000);
-                            let chaiCombo = soLuong - chaiTinhTien;
+                        comboNuoc10 += soChaiCombo;
 
-                            if (chaiCombo > 0) {
-                                comboNuoc10 += chaiCombo;
-                            }
-
-                        }
-
+                        continue;
                     }
-                    else if (gia <= 14000) { nuoc12 += soLuong; tien12 += tien; }
-                    else if (gia <= 15000) { nuoc15 += soLuong; tien15 += tien; }
-                    else { nuoc18 += soLuong; tien18 += tien; }
 
+                    // ===== COMBO THUẦN =====
+                    if (tien === 0) {
+                        comboNuoc10 += soLuong;
+                        continue;
+                    }
+
+                    let gia = tien / soLuong;
+
+                    if (gia <= 12000) {
+                        nuoc12 += soLuong;
+                        tien12 += tien;
+                    }
+                    else if (gia <= 14000) {
+                        nuoc14 += soLuong;
+                        tien14 += tien;
+                    }
+                    else if (gia <= 15000) {
+                        nuoc15 += soLuong;
+                        tien15 += tien;
+                    }
+                    else {
+                        nuoc20 += soLuong;
+                        tien20 += tien;
+                    }
                 }
 
 
@@ -671,10 +703,11 @@
             let tienTongMy = tienMyNuoc + tienMyXao;
 
             let tongAI =
-                tien10 +
+                tienAqua +
                 tien12 +
+                tien14 +
                 tien15 +
-                tien18 +
+                tien20 +
                 tienMyNuoc +
                 tienMyXao +
                 tienKimbap +
@@ -700,10 +733,11 @@
 
             return `${kiemTra}📊 PHÂN TÍCH DOANH THU
 ----------------------------
-🥤 Nước 12k : ${nuoc10} món - ${tien10.toLocaleString()} đ
-🥤 Nước 14k : ${nuoc12} món - ${tien12.toLocaleString()} đ
+🥤 Nước 10k : ${aqua} món - ${tienAqua.toLocaleString()} đ
+🥤 Nước 12k : ${nuoc12 + comboNuoc10} món - ${tien12.toLocaleString()} đ
+🥤 Nước 14k : ${nuoc14} món - ${tien14.toLocaleString()} đ
 🥤 Nước 15k : ${nuoc15} món - ${tien15.toLocaleString()} đ
-🥤 Nước 20k : ${nuoc18} món - ${tien18.toLocaleString()} đ
+🥤 Nước 20k : ${nuoc20} món - ${tien20.toLocaleString()} đ
 
 🍜 Mỳ nước  : ${myNuoc} món - ${tienMyNuoc.toLocaleString()} đ
 🍜 Mỳ xào   : ${myXao} món - ${tienMyXao.toLocaleString()} đ
