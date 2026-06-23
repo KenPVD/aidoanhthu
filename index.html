@@ -494,7 +494,7 @@
         let tienMomo = 0;
 
         let kiemItems = [
-            { name: "🥤 Nước 10k", gia: 10000 },
+            /* { name: "🥤 Nước 10k", gia: 10000 }, */
             { name: "🥤 Nước 12k", gia: 12000, type: "nuoc12" },
             { name: "🥤 Nước 14k", gia: 14000 },
             { name: "🥤 Nước 15k", gia: 15000 },
@@ -581,14 +581,14 @@
                 let gia = tien / soLuong;
 
 
-                // ===== AQUA (NƯỚC 10K RIÊNG) =====
+                // ===== AQUA TÍNH VÀO NƯỚC 12K =====
                 if (/AQUA/i.test(ten)) {
-                    aqua += soLuong;
-                    tienAqua += soLuong * 10000;
+                    nuoc12 += soLuong;
+                    tien12 += soLuong * 12000;
                     continue;
                 }
                 // ===== NƯỚC =====
-                if (/STING|PEPSI|COCA|MIRINDA|SPRITE|REVIVE|RIVIVE|ROCK|OLONG|O LONG|TRA|TRÀ|COZY|SUA|SỮA|NUTRI|TRAU|HUC|HÚC|BO HUC|BÒ HÚC/i.test(ten)) {
+                if (/AQUA|STING|PEPSI|COCA|MIRINDA|SPRITE|REVIVE|RIVIVE|ROCK|OLONG|O LONG|TRA|TRÀ|COZY|SUA|SỮA|NUTRI|TRAU|HUC|HÚC|BO HUC|BÒ HÚC/i.test(ten)) {
 
                     // ===== CASE ĐẶC BIỆT: có combo lẫn nước tính tiền =====
                     if (soLuong > 1 && tien > 0 && tien < soLuong * 12000) {
@@ -734,7 +734,6 @@
 
             return `${kiemTra}📊 PHÂN TÍCH DOANH THU
 ----------------------------
-🥤 Nước 10k : ${aqua} món - ${tienAqua.toLocaleString()} đ
 🥤 Nước 12k : ${nuoc12 + comboNuoc10} món - ${tien12.toLocaleString()} đ
 🥤 Nước 14k : ${nuoc14} món - ${tien14.toLocaleString()} đ
 🥤 Nước 15k : ${nuoc15} món - ${tien15.toLocaleString()} đ
