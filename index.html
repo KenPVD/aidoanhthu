@@ -322,6 +322,26 @@
         * {
             transition: all 0.3s ease;
         }
+
+        #fileInput {
+            display: none;
+        }
+
+        .file-btn {
+            width: 50px;
+            border: none;
+            background: transparent;
+            color: var(--cyan-neon);
+            cursor: pointer;
+            font-size: 22px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .file-btn:hover {
+            text-shadow: 0 0 12px var(--cyan-neon);
+        }
     </style>
 </head>
 
@@ -349,11 +369,16 @@
         </div>
 
         <div id="messages" class="messages">
-            <div class="msg bot">> Kích Hoạt AI Thành Công✅ <br>> Phiên Bản: v2 Nâng Cấp Giao Diện <br>> Nhập hàng bán hoặc dùng /help, /kiemsoban, /kiemtien</div>
+            <div class="msg bot">> Kích Hoạt AI Thành Công✅ <br>> Phiên Bản: v2 Nâng Cấp Giao Diện <br>> Nhập hàng bán
+                hoặc dùng /help, /kiemsoban, /kiemtien</div>
         </div>
 
         <div class="input-area">
             <div class="input-box">
+                <input type="file" id="fileInput" accept="*/*">
+                <button class="file-btn" onclick="document.getElementById('fileInput').click()">
+                    📂
+                </button>
                 <textarea id="input" placeholder="Nhập doanh thu tại đây..."></textarea>
                 <button class="send-btn" onclick="send()">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -366,6 +391,9 @@
         </div>
     </div>
 
+    <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <script>
         // --- CANVAS MATRIX EFFECT ---
         const canvas = document.getElementById('matrix');
@@ -485,6 +513,151 @@
 
         const messages = document.getElementById("messages");
         const input = document.getElementById("input");
+        const fileInput = document.getElementById("fileInput");
+
+        function layDuoiFile(fileName) {
+            let parts = fileName.toLowerCase().split(".");
+            return parts.length > 1 ? parts.pop() : "";
+        }
+
+        function docFileText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = () => reject("Không đọc được file.");
+
+                reader.readAsText(file, "utf-8");
+            });
+        }
+
+        async function docFileDocx(file) {
+            const arrayBuffer = await file.arrayBuffer();
+
+            const result = await mammoth.extractRawText({
+                arrayBuffer: arrayBuffer
+            });
+
+            return result.value;
+        }
+
+        async function docFilePdf(file) {
+            if (!window.pdfjsLib) {
+                throw new Error("Chưa tải được thư viện PDF.js.");
+            }
+
+            pdfjsLib.GlobalWorkerOptions.workerSrc =
+                "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+            let text = "";
+
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const content = await page.getTextContent();
+
+                text += content.items.map(item => item.str).join(" ") + "\n";
+            }
+
+            return text;
+        }
+
+        async function docFileExcel(file) {
+            if (!window.XLSX) {
+                throw new Error("Chưa tải được thư viện XLSX.");
+            }
+
+            const arrayBuffer = await file.arrayBuffer();
+            const workbook = XLSX.read(arrayBuffer, { type: "array" });
+
+            let text = "";
+
+            workbook.SheetNames.forEach(sheetName => {
+                const sheet = workbook.Sheets[sheetName];
+                text += XLSX.utils.sheet_to_csv(sheet, { FS: " ", RS: "\n" }) + "\n";
+            });
+
+            return text;
+        }
+
+        fileInput.addEventListener("change", async function () {
+
+            const file = this.files[0];
+            if (!file) return;
+
+            const name = file.name.toLowerCase();
+            const ext = layDuoiFile(name);
+
+            try {
+
+                addMsg("📂 Đang đọc file: " + file.name, "bot");
+
+                let noiDung = "";
+
+                // TXT / CSV / LOG / HTML / RTF
+                if (["txt", "csv", "log", "html", "htm", "rtf"].includes(ext)) {
+                    noiDung = await docFileText(file);
+                }
+
+                // WORD DOCX
+                else if (ext === "docx") {
+                    noiDung = await docFileDocx(file);
+                }
+
+                // PDF
+                else if (ext === "pdf") {
+                    noiDung = await docFilePdf(file);
+                }
+
+                // EXCEL / WPS SPREADSHEET
+                else if (["xls", "xlsx", "xlsm", "csv", "ods"].includes(ext)) {
+                    noiDung = await docFileExcel(file);
+                }
+
+                // FILE .DOC CŨ
+                else if (ext === "doc") {
+                    alert("File .doc cũ không đọc trực tiếp được trên trình duyệt.\n\nCách sửa:\n1. Mở file bằng Word hoặc WPS\n2. Bấm Save As / Lưu thành\n3. Chọn Word Document (*.docx)\n4. Chọn lại file .docx đó trong web");
+                    fileInput.value = "";
+                    return;
+                }
+
+                // FILE WPS GỐC
+                else if (ext === "wps") {
+                    alert("File .wps gốc không đọc trực tiếp được trên trình duyệt.\n\nCách sửa:\n1. Mở file bằng WPS\n2. Bấm Save As / Lưu thành\n3. Chọn .docx hoặc .xlsx\n4. Chọn lại file vừa lưu trong web");
+                    fileInput.value = "";
+                    return;
+                }
+
+                else {
+                    // thử đọc như file chữ thường
+                    noiDung = await docFileText(file);
+                }
+
+                noiDung = noiDung.trim();
+
+                if (!noiDung) {
+                    alert("Đọc được file nhưng không thấy nội dung chữ.\nCó thể file là ảnh scan hoặc định dạng không hỗ trợ.");
+                    fileInput.value = "";
+                    return;
+                }
+
+                input.value = noiDung;
+
+                send();
+
+            } catch (err) {
+
+                console.error(err);
+
+                alert("Không đọc được file này.\n\nTên file: " + file.name + "\nĐuôi file: ." + ext + "\n\nNếu là .doc hoặc .wps thì hãy lưu lại thành .docx rồi thử lại.");
+
+            }
+
+            fileInput.value = "";
+        });
+
         let kiemSoBanMode = false;
         let kiemStep = 0;
         let kiemTienMode = false;
@@ -533,7 +706,6 @@
 
         function phanTichDoanhThu(text) {
 
-            let aqua = 0, tienAqua = 0;
             let nuoc12 = 0, tien12 = 0;
             let comboNuoc10 = 0;
             let nuoc14 = 0, tien14 = 0;
@@ -550,63 +722,42 @@
             let snack = 0, tienSnack = 0;
             let thuoc = 0, tienThuoc = 0;
 
-            let lines = text.split("\n");
+            // Gộp mọi xuống dòng / tab / nhiều dấu cách thành 1 dấu cách
+            let clean = text.replace(/\s+/g, " ").trim();
+
+            // Lấy tổng cuối báo cáo: "Tổng cộng 608,000"
             let tongBaoCao = 0;
+            let tongCuoi = clean.match(/Tổng\s+cộng\s+([\d,]+)\s*$/i);
+            if (tongCuoi) {
+                tongBaoCao = parseInt(tongCuoi[1].replace(/,/g, ""));
+            }
 
-            for (let line of lines) {
+            // Bắt tất cả dòng "Tổng cộng: TÊN MÓN SỐLƯỢNG SỐTIỀN NHÂNVIÊN"
+            let regex = /Tổng\s+cộng:\s*(.*?)\s+(\d+)\s+([\d,]+)\s+(NHANVIEN|ADMIN)/gi;
 
-                let tongMatch = line.match(/Tổng\s*cộng\s*([\d,]+)/i);
-                if (tongMatch) {
-                    tongBaoCao = parseInt(tongMatch[1].replace(/,/g, ""));
-                }
+            let match;
 
-                // ===== ĐẾM COMBO TỪ DÒNG CHI TIẾT =====
-                let detailMatch = line.match(/(.*?)\s+\d{2}-[A-Za-z]{3}-\d{4}.*?\s(\d+)\s+([\d,]+)/);
+            while ((match = regex.exec(clean)) !== null) {
 
-                if (detailMatch) {
-                    let ten = detailMatch[1].toUpperCase();
-                    let soLuong = parseInt(detailMatch[2]);
-                    let tien = parseInt(detailMatch[3].replace(/,/g, ""));
-
-                }
-                if (!line.includes("Tổng cộng:")) continue;
-
-                let match = line.match(/Tổng cộng:\s*(.*?)\s+(\d+)\s+([\d,]+)/i);
-                if (!match) continue;
-
-                let ten = match[1].toUpperCase();
+                let ten = match[1].toUpperCase().trim();
                 let soLuong = parseInt(match[2]);
                 let tien = parseInt(match[3].replace(/,/g, ""));
 
-                let gia = tien / soLuong;
-
-
-                // ===== AQUA TÍNH VÀO NƯỚC 12K =====
-                if (/AQUA/i.test(ten)) {
-                    nuoc12 += soLuong;
-                    tien12 += soLuong * 12000;
-                    continue;
-                }
                 // ===== NƯỚC =====
-                if (/AQUA|STING|PEPSI|COCA|MIRINDA|SPRITE|REVIVE|RIVIVE|ROCK|OLONG|O LONG|TRA|TRÀ|COZY|SUA|SỮA|NUTRI|TRAU|HUC|HÚC|BO HUC|BÒ HÚC/i.test(ten)) {
+                if (/AQUA|STING|PEPSI|COCA|MIRINDA|SPRITE|REVIVE|RIVIVE|ROCK|ROCKSTSAR|OLONG|O LONG|TRA|TRÀ|COZY|SUA|SỮA|SỬA|NUTRI|TRAU|TRÂU|HUC|HÚC|BO HUC|BÒ HÚC/i.test(ten)) {
 
-                    // ===== CASE ĐẶC BIỆT: có combo lẫn nước tính tiền =====
+                    if (tien === 0) {
+                        comboNuoc10 += soLuong;
+                        continue;
+                    }
+
                     if (soLuong > 1 && tien > 0 && tien < soLuong * 12000) {
-
                         let soChaiTinhTien = Math.round(tien / 12000);
                         let soChaiCombo = soLuong - soChaiTinhTien;
 
                         nuoc12 += soChaiTinhTien;
                         tien12 += soChaiTinhTien * 12000;
-
                         comboNuoc10 += soChaiCombo;
-
-                        continue;
-                    }
-
-                    // ===== COMBO THUẦN =====
-                    if (tien === 0) {
-                        comboNuoc10 += soLuong;
                         continue;
                     }
 
@@ -628,13 +779,14 @@
                         nuoc20 += soLuong;
                         tien20 += tien;
                     }
+
+                    continue;
                 }
 
-
                 // ===== MỲ =====
-                else if (ten.includes("MY") || ten.includes("MỲ")) {
+                if (/MY|MỲ/i.test(ten)) {
 
-                    if (ten.includes("XAO")) {
+                    if (/XAO|XÀO/i.test(ten)) {
                         myXao += soLuong;
                         tienMyXao += soLuong * 20000;
                     } else {
@@ -642,94 +794,85 @@
                         tienMyNuoc += soLuong * 10000;
                     }
 
-                    // trứng kèm mỳ
                     if (/TRUNG|TRỨNG|OP LA|ỐP LA|LUOT|LUỘC/i.test(ten)) {
                         trung += soLuong;
                         tienTrung += soLuong * 10000;
                     }
 
-                    // xúc xích kèm mỳ
                     if (/XUC XICH|XÚC XÍCH/i.test(ten)) {
                         xucxich += soLuong;
                         tienXucxich += soLuong * 10000;
                     }
 
+                    continue;
                 }
 
-
-                // ===== TRỨNG RIÊNG =====
-                else if (/TRUNG|TRỨNG|OP LA|ỐP LA|LUOT|LUỘC/i.test(ten)) {
-                    trung += soLuong;
-                    tienTrung += soLuong * 10000;
-                }
-
-
-                // ===== KIMBAP =====
-                else if (ten.includes("KIMBAP")) {
+                if (/KIMBAP/i.test(ten)) {
                     kimbap += soLuong;
                     tienKimbap += soLuong * 20000;
+                    continue;
                 }
 
-
-                // ===== XÚC XÍCH =====
-                else if (/XUC XICH|XÚC XÍCH/i.test(ten)) {
+                if (/XUC XICH|XÚC XÍCH/i.test(ten)) {
                     xucxich += soLuong;
                     tienXucxich += tien;
+                    continue;
                 }
 
+                if (/TRUNG|TRỨNG|OP LA|ỐP LA|LUOT|LUỘC/i.test(ten)) {
+                    trung += soLuong;
+                    tienTrung += soLuong * 10000;
+                    continue;
+                }
 
-                // ===== KEM =====
-                else if (ten.includes("KEM")) {
+                if (/KEM/i.test(ten)) {
                     kem += soLuong;
                     tienKem += soLuong * 15000;
+                    continue;
                 }
 
-
-                // ===== SNACK =====
-                else if (/BIM|SNACK/i.test(ten)) {
+                if (/BIM|SNACK/i.test(ten)) {
                     snack += soLuong;
                     tienSnack += tien;
+                    continue;
                 }
 
-
-                // ===== THUỐC =====
-                else if (/THUOC|THUỐC/i.test(ten)) {
+                if (/THUOC|THUỐC/i.test(ten)) {
                     thuoc += soLuong;
                     tienThuoc += soLuong * 25000;
+                    continue;
                 }
-
             }
 
             let tongMy = myNuoc + myXao;
             let tienTongMy = tienMyNuoc + tienMyXao;
 
             let tongAI =
-                tienAqua +
-                tien12 +
-                tien14 +
-                tien15 +
-                tien20 +
-                tienMyNuoc +
-                tienMyXao +
-                tienKimbap +
-                tienXucxich +
-                tienTrung +
-                tienKem +
-                tienSnack +
-                tienThuoc;
-
-            let tong = tongBaoCao || tongAI;
+                tien12 + tien14 + tien15 + tien20 +
+                tienMyNuoc + tienMyXao +
+                tienKimbap + tienXucxich + tienTrung +
+                tienKem + tienSnack + tienThuoc;
 
             let kiemTra = "";
 
             if (tongBaoCao && tongBaoCao !== tongAI) {
-                kiemTra = `⚠️ Phát hiện AI tính sai doanh thu
+                kiemTra =
+                    `⚠️ Phát hiện AI tính sai doanh thu
 🚫 Hãy báo cho Đại ngay!
 ✅ Tính tay tạm đi để không bị thiếu hàng
 📄 Tổng báo cáo: ${tongBaoCao.toLocaleString()} đ
-🤖 AI tính sai thành: ${tongAI.toLocaleString()} đ
+🤖 AI tính: ${tongAI.toLocaleString()} đ
+📌 Chênh lệch: ${(tongAI - tongBaoCao).toLocaleString()} đ
 
 `;
+            }
+
+            // Lấy thời gian ca
+            let thoiGianCa = "";
+            const tg = text.match(/Từ:\s*(.*?)\s*-\s*Đến:\s*(.*?)(?=\s*Tên dịch vụ|$)/i);
+
+            if (tg) {
+                thoiGianCa = `📅 ${tg[1]} - ${tg[2]}`;
             }
 
             return `${kiemTra}📊 PHÂN TÍCH DOANH THU
@@ -748,13 +891,13 @@
 🥚 Trứng    : ${trung} món - ${tienTrung.toLocaleString()} đ
 🍦 Kem      : ${kem} món - ${tienKem.toLocaleString()} đ
 🍟 Snack    : ${snack} món - ${tienSnack.toLocaleString()} đ
-
 🚬 Thuốc lá : ${thuoc} món - ${tienThuoc.toLocaleString()} đ
 
 🎁 Nước Combo 0đ: ${comboNuoc10} chai
 
-💰 TỔNG CỘNG    :${tongAI.toLocaleString()} đ
-----------------------------`;
+💰 TỔNG CỘNG: ${tongAI.toLocaleString()} đ
+----------------------------
+${thoiGianCa}`;
         }
 
         function resetAll() {
