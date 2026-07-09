@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 
@@ -323,26 +322,6 @@
         * {
             transition: all 0.3s ease;
         }
-
-        #fileInput {
-            display: none;
-        }
-
-        .file-btn {
-            width: 50px;
-            border: none;
-            background: transparent;
-            color: var(--cyan-neon);
-            cursor: pointer;
-            font-size: 22px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .file-btn:hover {
-            text-shadow: 0 0 12px var(--cyan-neon);
-        }
     </style>
 </head>
 
@@ -370,16 +349,11 @@
         </div>
 
         <div id="messages" class="messages">
-            <div class="msg bot">> Kích Hoạt AI Thành Công✅ <br>> Phiên Bản: v2 Nâng Cấp Giao Diện <br>> Nhập hàng bán
-                hoặc dùng /help, /kiemsoban, /kiemtien</div>
+            <div class="msg bot">> Kích Hoạt AI Thành Công✅ <br>> Phiên Bản: v2 Nâng Cấp Giao Diện <br>> Nhập hàng bán hoặc dùng /help, /kiemsoban, /kiemtien</div>
         </div>
 
         <div class="input-area">
             <div class="input-box">
-                <input type="file" id="fileInput" accept="*/*">
-                <button class="file-btn" onclick="document.getElementById('fileInput').click()">
-                    📂
-                </button>
                 <textarea id="input" placeholder="Nhập doanh thu tại đây..."></textarea>
                 <button class="send-btn" onclick="send()">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -392,9 +366,6 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <script>
         // --- CANVAS MATRIX EFFECT ---
         const canvas = document.getElementById('matrix');
@@ -514,151 +485,6 @@
 
         const messages = document.getElementById("messages");
         const input = document.getElementById("input");
-        const fileInput = document.getElementById("fileInput");
-
-        function layDuoiFile(fileName) {
-            let parts = fileName.toLowerCase().split(".");
-            return parts.length > 1 ? parts.pop() : "";
-        }
-
-        function docFileText(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-
-                reader.onload = e => resolve(e.target.result);
-                reader.onerror = () => reject("Không đọc được file.");
-
-                reader.readAsText(file, "utf-8");
-            });
-        }
-
-        async function docFileDocx(file) {
-            const arrayBuffer = await file.arrayBuffer();
-
-            const result = await mammoth.extractRawText({
-                arrayBuffer: arrayBuffer
-            });
-
-            return result.value;
-        }
-
-        async function docFilePdf(file) {
-            if (!window.pdfjsLib) {
-                throw new Error("Chưa tải được thư viện PDF.js.");
-            }
-
-            pdfjsLib.GlobalWorkerOptions.workerSrc =
-                "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
-            const arrayBuffer = await file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-            let text = "";
-
-            for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const content = await page.getTextContent();
-
-                text += content.items.map(item => item.str).join(" ") + "\n";
-            }
-
-            return text;
-        }
-
-        async function docFileExcel(file) {
-            if (!window.XLSX) {
-                throw new Error("Chưa tải được thư viện XLSX.");
-            }
-
-            const arrayBuffer = await file.arrayBuffer();
-            const workbook = XLSX.read(arrayBuffer, { type: "array" });
-
-            let text = "";
-
-            workbook.SheetNames.forEach(sheetName => {
-                const sheet = workbook.Sheets[sheetName];
-                text += XLSX.utils.sheet_to_csv(sheet, { FS: " ", RS: "\n" }) + "\n";
-            });
-
-            return text;
-        }
-
-        fileInput.addEventListener("change", async function () {
-
-            const file = this.files[0];
-            if (!file) return;
-
-            const name = file.name.toLowerCase();
-            const ext = layDuoiFile(name);
-
-            try {
-
-                addMsg("📂 Đang đọc file: " + file.name, "bot");
-
-                let noiDung = "";
-
-                // TXT / CSV / LOG / HTML / RTF
-                if (["txt", "csv", "log", "html", "htm", "rtf"].includes(ext)) {
-                    noiDung = await docFileText(file);
-                }
-
-                // WORD DOCX
-                else if (ext === "docx") {
-                    noiDung = await docFileDocx(file);
-                }
-
-                // PDF
-                else if (ext === "pdf") {
-                    noiDung = await docFilePdf(file);
-                }
-
-                // EXCEL / WPS SPREADSHEET
-                else if (["xls", "xlsx", "xlsm", "csv", "ods"].includes(ext)) {
-                    noiDung = await docFileExcel(file);
-                }
-
-                // FILE .DOC CŨ
-                else if (ext === "doc") {
-                    alert("File .doc cũ không đọc trực tiếp được trên trình duyệt.\n\nCách sửa:\n1. Mở file bằng Word hoặc WPS\n2. Bấm Save As / Lưu thành\n3. Chọn Word Document (*.docx)\n4. Chọn lại file .docx đó trong web");
-                    fileInput.value = "";
-                    return;
-                }
-
-                // FILE WPS GỐC
-                else if (ext === "wps") {
-                    alert("File .wps gốc không đọc trực tiếp được trên trình duyệt.\n\nCách sửa:\n1. Mở file bằng WPS\n2. Bấm Save As / Lưu thành\n3. Chọn .docx hoặc .xlsx\n4. Chọn lại file vừa lưu trong web");
-                    fileInput.value = "";
-                    return;
-                }
-
-                else {
-                    // thử đọc như file chữ thường
-                    noiDung = await docFileText(file);
-                }
-
-                noiDung = noiDung.trim();
-
-                if (!noiDung) {
-                    alert("Đọc được file nhưng không thấy nội dung chữ.\nCó thể file là ảnh scan hoặc định dạng không hỗ trợ.");
-                    fileInput.value = "";
-                    return;
-                }
-
-                input.value = noiDung;
-
-                send();
-
-            } catch (err) {
-
-                console.error(err);
-
-                alert("Không đọc được file này.\n\nTên file: " + file.name + "\nĐuôi file: ." + ext + "\n\nNếu là .doc hoặc .wps thì hãy lưu lại thành .docx rồi thử lại.");
-
-            }
-
-            fileInput.value = "";
-        });
-
         let kiemSoBanMode = false;
         let kiemStep = 0;
         let kiemTienMode = false;
