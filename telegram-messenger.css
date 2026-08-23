@@ -1,0 +1,416 @@
+/* =====================================================
+   CHAT NHỎ BÊN TRÁI KHUNG AI
+   ===================================================== */
+
+.side-chat {
+    position: fixed;
+
+    /* Nằm sát bên trái màn hình */
+    left: 200px;
+
+    /* Căn giữa theo chiều dọc */
+    top: 50%;
+    transform: translateY(-50%);
+
+    width: 300px;
+    height: 430px;
+
+    background: #18191a;
+    border: 1px solid #3a3b3c;
+    border-radius: 12px;
+
+    overflow: hidden;
+
+    display: flex;
+    flex-direction: column;
+
+    font-family: Arial, Helvetica, sans-serif;
+    color: #e4e6eb;
+
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.55);
+
+    /* Chat nằm trên background nhưng không ảnh hưởng khung AI */
+    z-index: 9999;
+}
+
+/* =========================
+   HEADER
+   ========================= */
+
+.side-chat-header {
+    height: 58px;
+
+    padding: 8px 10px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background: #242526;
+
+    border-bottom: 1px solid #3a3b3c;
+
+    box-sizing: border-box;
+}
+
+
+.side-chat-user {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    min-width: 0;
+}
+
+
+/* AVATAR */
+
+.side-chat-avatar {
+    width: 40px;
+    height: 40px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    background: #606770;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: white;
+
+    font-size: 19px;
+    font-weight: bold;
+
+    position: relative;
+}
+
+
+/* chấm xanh */
+
+.side-chat-avatar::after {
+    content: "";
+
+    position: absolute;
+
+    right: -1px;
+    bottom: 1px;
+
+    width: 10px;
+    height: 10px;
+
+    background: #31a24c;
+
+    border: 2px solid #242526;
+
+    border-radius: 50%;
+}
+
+
+/* TÊN */
+
+.side-chat-name {
+    font-size: 14px;
+    font-weight: 600;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+/* ONLINE */
+
+.side-chat-status {
+    margin-top: 2px;
+
+    color: #b0b3b8;
+
+    font-size: 11px;
+
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+
+.side-chat-status span {
+    width: 6px;
+    height: 6px;
+
+    border-radius: 50%;
+
+    background: #31a24c;
+}
+
+
+/* =========================
+   NÚT HEADER
+   ========================= */
+
+.side-chat-actions {
+    display: flex;
+    align-items: center;
+
+    gap: 2px;
+}
+
+
+.side-chat-actions button {
+    width: 27px;
+    height: 27px;
+
+    border: none;
+    background: transparent;
+
+    color: #0084ff;
+
+    font-size: 17px;
+
+    cursor: pointer;
+
+    border-radius: 50%;
+
+    transition: 0.15s;
+}
+
+
+.side-chat-actions button:hover {
+    background: #3a3b3c;
+}
+
+
+/* =========================
+   KHUNG TIN NHẮN
+   ========================= */
+
+.side-chat-messages {
+    flex: 1;
+
+    padding: 15px 10px;
+
+    overflow-y: auto;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 6px;
+
+    background: #18191a;
+}
+
+
+/* scrollbar */
+
+.side-chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.side-chat-messages::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 10px;
+}
+
+
+/* =========================
+   TIN NHẮN
+   ========================= */
+
+.message {
+    max-width: 75%;
+
+    padding: 9px 12px;
+
+    font-size: 13px;
+
+    line-height: 1.3;
+
+    border-radius: 18px;
+
+    word-wrap: break-word;
+}
+
+
+/* tin bên trái */
+
+.message.received {
+    align-self: flex-start;
+
+    background: #3a3b3c;
+
+    color: #e4e6eb;
+
+    border-bottom-left-radius: 5px;
+}
+
+
+/* tin bên phải */
+
+.message.sent {
+    align-self: flex-end;
+
+    background: #0084ff;
+
+    color: white;
+
+    border-bottom-right-radius: 5px;
+}
+
+
+/* =========================
+   THANH NHẬP
+   ========================= */
+
+.side-chat-input {
+    min-height: 52px;
+
+    padding: 7px 8px;
+
+    box-sizing: border-box;
+
+    display: flex;
+    align-items: center;
+
+    gap: 3px;
+
+    background: #242526;
+
+    border-top: 1px solid #3a3b3c;
+}
+
+
+/* icon */
+
+.chat-icon {
+    border: none;
+
+    background: transparent;
+
+    color: #0084ff;
+
+    cursor: pointer;
+
+    font-size: 16px;
+
+    padding: 5px;
+
+    border-radius: 50%;
+}
+
+
+.chat-icon:hover {
+    background: #3a3b3c;
+}
+
+
+/* GIF */
+
+.side-chat-input .chat-icon:nth-child(3) {
+    font-size: 10px;
+    font-weight: bold;
+}
+
+
+/* ô nhập */
+
+.side-chat-input input {
+    flex: 1;
+
+    min-width: 0;
+
+    height: 34px;
+
+    border: none;
+    outline: none;
+
+    border-radius: 18px;
+
+    background: #3a3b3c;
+
+    color: #e4e6eb;
+
+    padding: 0 12px;
+
+    font-size: 13px;
+}
+
+
+.side-chat-input input::placeholder {
+    color: #b0b3b8;
+}
+
+
+/* emoji */
+
+.emoji,
+.like {
+    border: none;
+
+    background: transparent;
+
+    cursor: pointer;
+
+    font-size: 18px;
+
+    padding: 4px;
+}
+
+
+.emoji:hover,
+.like:hover {
+    transform: scale(1.08);
+}
+
+
+/* =========================
+   MÀN HÌNH NHỎ
+   ========================= */
+
+@media (max-width: 1200px) {
+
+    .side-chat {
+        left: 15px;
+    }
+
+}
+
+
+/* =========================
+   LAPTOP NHỎ
+   ========================= */
+
+@media (max-width: 900px) {
+
+    .side-chat {
+        width: 270px;
+        height: 400px;
+
+        left: 10px;
+    }
+
+}
+.side-chat-send {
+    width: 30px;
+    height: 34px;
+
+    border: none;
+    outline: none;
+
+    background: transparent;
+
+    color: #0084ff;
+
+    cursor: pointer;
+
+    font-size: 20px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.side-chat-send:hover {
+    transform: scale(1.1);
+}
