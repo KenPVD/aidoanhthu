@@ -2,6 +2,9 @@
 <html lang="vi">
 
 <head>
+    <link rel="stylesheet" href="telegram-messenger.css">
+    <script type="module" src="telegram-messenger.js">
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI phân tích doanh thu</title>
@@ -342,10 +345,99 @@
         .file-btn:hover {
             text-shadow: 0 0 12px var(--cyan-neon);
         }
+
+        .side-chat-avatar {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+        }
+
+        .side-chat-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            display: block;
+        }
+
+        .online-dot {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            width: 10px;
+            height: 10px;
+            background: #31c45b;
+            border: 2px solid #1f1f1f;
+            border-radius: 50%;
+        }
     </style>
 </head>
 
 <body>
+    <!-- CHAT NHỎ BÊN CẠNH KHUNG AI -->
+    <div class="side-chat">
+        <div class="side-chat-header">
+            <div class="side-chat-user">
+                <div class="side-chat-avatar">
+                    <img src="https://i.ibb.co/BVYFpybg/image.png" alt="Việt Đại">
+                    <span class="online-dot"></span>
+                </div>
+
+                <div>
+                    <div class="side-chat-name">Việt Đại</div>
+                    <div class="side-chat-status">
+                        <span></span> Đang hoạt động
+                    </div>
+                </div>
+            </div>
+
+            <<div class="side-chat-actions">
+
+                <button type="button">☎</button>
+                <button type="button">▰</button>
+                <button type="button">−</button>
+
+                <button type="button" class="side-chat-close" aria-label="Đóng">
+                    ×
+                </button>
+        </div>
+    </div>
+
+    <div class="side-chat-messages">
+        <div class="message received">
+            Xin chào 👋
+        </div>
+
+        <div class="message sent">
+            Chào bạn 😎
+        </div>
+    </div>
+
+    <div class="side-chat-input">
+
+        <button class="chat-icon">🎤</button>
+
+        <button class="chat-icon">🖼️</button>
+
+        <button class="chat-icon">GIF</button>
+
+        <input type="text" placeholder="Aa" autocomplete="off">
+
+        <button class="emoji">
+            😊
+        </button>
+
+        <button class="like">
+            👍
+        </button>
+
+        <button class="side-chat-send" type="button">
+            ➤
+        </button>
+
+    </div>
+    </div>
     <div id="loader">
         <div class="loader-box">
             <div class="spinner-wrap">
@@ -1613,6 +1705,33 @@ Tiền mặt: ${tienMat}
             // 🔥 CHỈ lưu tạm trong session (không lưu vĩnh viễn)
             sessionStorage.setItem("themeIndex", currentTheme);
         }
+    </script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+        import {
+            getFirestore,
+            collection,
+            addDoc,
+            query,
+            orderBy,
+            onSnapshot,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDcOZNhCEnL2izlTpe4Nxy4Jwtf7YNx89k",
+            authDomain: "xgame-7ff37.firebaseapp.com",
+            projectId: "xgame-7ff37",
+            storageBucket: "xgame-7ff37.firebasestorage.app",
+            messagingSenderId: "204757980002",
+            appId: "1:204757980002:web:acdccd4c02be7be378923b",
+            measurementId: "G-7T0F0T1LME"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        console.log("✅ Firebase đã kết nối");
     </script>
 </body>
 
