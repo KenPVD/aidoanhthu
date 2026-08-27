@@ -104,15 +104,14 @@ const db =
     1800  = 30 phút
 */
 
-const AUTO_MESSAGE_SECONDS = 900;
+const AUTO_MESSAGE_SECONDS = 60;
 
 
 /*
     Đổi sang milliseconds
 */
 
-const AUTO_MESSAGE_DELAY =
-    AUTO_MESSAGE_SECONDS * 1000;
+const AUTO_MESSAGE_DELAY = 15 * 60 * 1000;
 
 
 /*
@@ -120,7 +119,7 @@ const AUTO_MESSAGE_DELAY =
 */
 
 const AUTO_MESSAGE_TEXT =
-    "Đây là tin nhắn tự động! Mọi người cứ gửi lỗi hoặc vấn đề cần hỗ trợ, Đại sẽ xem và phản hồi trong vài phút.";
+    "";
 
 
 /*
@@ -275,6 +274,8 @@ document.addEventListener(
         */
 
         let lastUserMessageTime = 0;
+        let lastAdminMessageTime = 0;
+        let lastAutoMessageTime = 0;
 
 
         /*
@@ -465,25 +466,24 @@ document.addEventListener(
 
 
         /* =================================================
-           TẠO MESSAGE DOM
-           ================================================= */
+   TẠO MESSAGE DOM + THỜI GIAN 24 GIỜ
+   ================================================= */
 
         function createMessageElement(
             id,
             text,
-            type
+            type,
+            time = Date.now()
         ) {
 
             const message =
-                document.createElement(
-                    "div"
-                );
+                document.createElement("div");
 
 
             /*
                 User:
                 màu xanh / bên phải
-
+        
                 Admin + Auto:
                 màu xám / bên trái
             */
@@ -500,8 +500,65 @@ document.addEventListener(
             }
 
 
-            message.textContent =
+            /* =====================================
+               NỘI DUNG TIN NHẮN
+            ===================================== */
+
+            const messageText =
+                document.createElement("div");
+
+            messageText.className =
+                "xgame-message-text";
+
+            messageText.textContent =
                 text || "";
+
+
+            /* =====================================
+               THỜI GIAN
+               24 GIỜ: 01:05 / 13:42 / 23:59
+            ===================================== */
+
+            const messageTime =
+                document.createElement("div");
+
+            messageTime.className =
+                "xgame-message-time";
+
+
+            const messageDate =
+                new Date(
+                    Number(time) || Date.now()
+                );
+
+
+            const hours =
+                String(
+                    messageDate.getHours()
+                ).padStart(2, "0");
+
+
+            const minutes =
+                String(
+                    messageDate.getMinutes()
+                ).padStart(2, "0");
+
+
+            messageTime.textContent =
+                `${hours}:${minutes}`;
+
+
+            /* =====================================
+               GẮN NỘI DUNG + GIỜ
+            ===================================== */
+
+            message.appendChild(
+                messageText
+            );
+
+            message.appendChild(
+                messageTime
+            );
 
 
             message.dataset.messageId =
@@ -520,17 +577,15 @@ document.addEventListener(
             id,
             text,
             type,
+            time = Date.now(),
             shouldScroll = false
         ) {
 
-            /*
-                Không render trùng
-            */
+            /* Không render trùng */
 
             if (
                 renderedMessages.has(id)
             ) {
-
                 return;
             }
 
@@ -539,7 +594,8 @@ document.addEventListener(
                 createMessageElement(
                     id,
                     text,
-                    type
+                    type,
+                    time
                 );
 
 
@@ -679,8 +735,6 @@ document.addEventListener(
                 elapsed <
                 AUTO_MESSAGE_DELAY
             ) {
-
-                scheduleAutoMessage();
                 return;
             }
 
@@ -913,7 +967,8 @@ document.addEventListener(
                                 createMessageElement(
                                     docSnapshot.id,
                                     data.text || "",
-                                    visualType
+                                    visualType,
+                                    data.time
                                 );
 
 
@@ -1175,40 +1230,70 @@ document.addEventListener(
                                         hiện tại hoặc chat này.
                                     */
 
-                                    lastUserMessageId =
-                                        docSnapshot.id;
-
-
-                                    lastUserMessageTime =
+                                    const currentUserMessageTime =
                                         Number(
                                             data.time ||
                                             Date.now()
                                         );
 
+                                    /*
+                                        Tin nhắn cuối cùng trước khi khách nhắn lại.
+                                        Có nghĩa là phải tính cả ADMIN + USER.
+                                    */
+                                    const previousLastMessageTime =
+                                        Math.max(
+                                            lastUserMessageTime || 0,
+                                            lastAdminMessageTime || 0,
+                                            lastAutoMessageTime || 0
+                                        );
 
-                                    adminReplied =
-                                        false;
-
-
-                                    autoSentForLastUser =
-                                        false;
-
+                                    const silenceTime =
+                                        currentUserMessageTime -
+                                        previousLastMessageTime;
 
                                     /*
-                                        QUAN TRỌNG:
-
-                                        Mỗi lần user nhắn
-                                        -> reset 30 giây.
+                                        Lưu tin user hiện tại
                                     */
+                                    lastUserMessageId =
+                                        docSnapshot.id;
 
-                                    scheduleAutoMessage();
+                                    lastUserMessageTime =
+                                        currentUserMessageTime;
 
+                                    /*
+                                        Nếu trước đó đã im lặng >= 15 phút
+                                        và khách quay lại
+                                        -> GỬI AUTO NGAY.
+                                    */
+                                    if (
+                                        previousLastMessageTime > 0 &&
+                                        silenceTime >= AUTO_MESSAGE_DELAY &&
+                                        !autoSentForLastUser
+                                    ) {
 
-                                    console.log(
-                                        "👤 Tin user mới -> bắt đầu đếm",
-                                        AUTO_MESSAGE_SECONDS,
-                                        "giây"
-                                    );
+                                        adminReplied = false;
+
+                                        autoSentForLastUser = false;
+
+                                        console.log(
+                                            "⚡ Khách quay lại sau",
+                                            Math.floor(silenceTime / 1000),
+                                            "giây -> gửi auto NGAY"
+                                        );
+
+                                        sendAutoMessage();
+
+                                    } else {
+
+                                        /*
+                                            Chưa đủ 15 phút im lặng.
+                                            KHÔNG bắt đầu timer mới.
+                                        */
+
+                                        console.log(
+                                            "👤 Khách nhắn -> chưa đủ 15 phút im lặng, không auto"
+                                        );
+                                    }
                                 }
 
 
@@ -1265,6 +1350,7 @@ document.addEventListener(
                                             data.time ||
                                             Date.now()
                                         );
+                                    lastAutoMessageTime = autoTime;
 
 
                                     if (
