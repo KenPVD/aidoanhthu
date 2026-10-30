@@ -462,7 +462,8 @@
         </div>
 
         <div id="messages" class="messages">
-            <div class="msg bot">> Kích Hoạt AI Thành Công✅ <br>> Phiên Bản: v3 Chức Năng Gửi File <br>> Nhập hàng bán hoặc dùng /help, /kiemsoban, /kiemtien</div>
+            <div class="msg bot">> Kích Hoạt AI Thành Công✅ <br>> Phiên Bản: v3 Chức Năng Gửi File <br>> Nhập hàng bán
+                hoặc dùng /help, /kiemsoban, /kiemtien</div>
         </div>
 
         <div class="input-area">
@@ -772,7 +773,8 @@
             { name: "🥚 Trứng", gia: 10000 },
             { name: "🍦 Kem", gia: 15000 },
             { name: "🍟 Snack", gia: 10000 },
-            { name: "🚬 Thuốc", gia: 25000 }
+            { name: "🚬 Thuốc", gia: 25000 },
+            { name: "🍚 Cơm rang", gia: 30000 }
         ];
 
         let tongMyTam = 0;
@@ -797,7 +799,6 @@
         }
 
         function phanTichDoanhThu(text) {
-
             let nuoc12 = 0, tien12 = 0;
             let comboNuoc10 = 0;
             let nuoc14 = 0, tien14 = 0;
@@ -813,63 +814,59 @@
             let kem = 0, tienKem = 0;
             let snack = 0, tienSnack = 0;
             let thuoc = 0, tienThuoc = 0;
+            let comRang = 0, tienComRang = 0;
 
-            // Gộp mọi xuống dòng / tab / nhiều dấu cách thành 1 dấu cách
             let clean = text.replace(/\s+/g, " ").trim();
 
-            // Lấy tổng cuối báo cáo: "Tổng cộng 608,000"
-            let tongBaoCao = 0;
-            let tongCuoi = clean.match(/Tổng\s+cộng\s+([\d,]+)\s*$/i);
-            if (tongCuoi) {
-                tongBaoCao = parseInt(tongCuoi[1].replace(/,/g, ""));
+            // Chuyển tiền về số nguyên
+            function docTien(value) {
+                return parseInt(String(value).replace(/[.,]/g, ""), 10) || 0;
             }
 
-            // Bắt tất cả dòng "Tổng cộng: TÊN MÓN SỐLƯỢNG SỐTIỀN NHÂNVIÊN"
-            let regex = /Tổng\s+cộng:\s*(.*?)\s+(\d+)\s+([\d,]+)\s+(NHANVIEN|ADMIN)/gi;
+            // Lấy tổng báo cáo
+            let tongBaoCao = 0;
+            let tongCuoi = clean.match(/Tổng\s+cộng\s*:?\s*([\d.,]+)\s*$/i);
+
+            if (tongCuoi) {
+                tongBaoCao = docTien(tongCuoi[1]);
+            }
+
+            // Đọc từng dòng hàng bán
+            let regex = /Tổng\s+cộng:\s*(.*?)\s+(\d+)\s+([\d.,]+)\s+(NHANVIEN|ADMIN)/gi;
 
             let match;
+            let soDongDocDuoc = 0;
 
             while ((match = regex.exec(clean)) !== null) {
+                soDongDocDuoc++;
 
                 let ten = match[1].toUpperCase().trim();
-                let soLuong = parseInt(match[2]);
-                let tien = parseInt(match[3].replace(/,/g, ""));
+                let soLuong = parseInt(match[2], 10);
+                let tien = docTien(match[3]);
+
+                if (!soLuong || soLuong <= 0) continue;
 
                 // ===== NƯỚC =====
                 if (/AQUA|STING|PEPSI|COCA|MIRINDA|SPRITE|REVIVE|RIVIVE|ROCK|ROCKSTSAR|OLONG|O LONG|TRA|TRÀ|COZY|SUA|SỮA|SỬA|NUTRI|TRAU|TRÂU|HUC|HÚC|BO HUC|BÒ HÚC/i.test(ten)) {
 
                     if (tien === 0) {
                         comboNuoc10 += soLuong;
-                        continue;
-                    }
+                    } else {
+                        let gia = tien / soLuong;
 
-                    if (soLuong > 1 && tien > 0 && tien < soLuong * 12000) {
-                        let soChaiTinhTien = Math.round(tien / 12000);
-                        let soChaiCombo = soLuong - soChaiTinhTien;
-
-                        nuoc12 += soChaiTinhTien;
-                        tien12 += soChaiTinhTien * 12000;
-                        comboNuoc10 += soChaiCombo;
-                        continue;
-                    }
-
-                    let gia = tien / soLuong;
-
-                    if (gia <= 12000) {
-                        nuoc12 += soLuong;
-                        tien12 += tien;
-                    }
-                    else if (gia <= 14000) {
-                        nuoc14 += soLuong;
-                        tien14 += tien;
-                    }
-                    else if (gia <= 15000) {
-                        nuoc15 += soLuong;
-                        tien15 += tien;
-                    }
-                    else {
-                        nuoc20 += soLuong;
-                        tien20 += tien;
+                        if (gia <= 12000) {
+                            nuoc12 += soLuong;
+                            tien12 += tien;
+                        } else if (gia <= 14000) {
+                            nuoc14 += soLuong;
+                            tien14 += tien;
+                        } else if (gia <= 15000) {
+                            nuoc15 += soLuong;
+                            tien15 += tien;
+                        } else {
+                            nuoc20 += soLuong;
+                            tien20 += tien;
+                        }
                     }
 
                     continue;
@@ -877,61 +874,93 @@
 
                 // ===== MỲ =====
                 if (/MY|MỲ/i.test(ten)) {
+                    let laMyXao = /XAO|XÀO/i.test(ten);
+                    let coTrung = /TRUNG|TRỨNG|OP LA|ỐP LA|LUOT|LUỘC/i.test(ten);
+                    let coXucXich = /XUC XICH|XÚC XÍCH/i.test(ten);
 
-                    if (/XAO|XÀO/i.test(ten)) {
+                    let tienNen = (laMyXao ? 20000 : 10000) * soLuong;
+                    let soMonThem = (coTrung ? 1 : 0) + (coXucXich ? 1 : 0);
+
+                    // Phân bổ tiền dòng mỳ, không cộng trùng tiền
+                    let tienMonThem = Math.max(0, tien - tienNen);
+                    let tienMy = tien - tienMonThem;
+
+                    if (laMyXao) {
                         myXao += soLuong;
-                        tienMyXao += soLuong * 20000;
+                        tienMyXao += tienMy;
                     } else {
                         myNuoc += soLuong;
-                        tienMyNuoc += soLuong * 10000;
+                        tienMyNuoc += tienMy;
                     }
 
-                    if (/TRUNG|TRỨNG|OP LA|ỐP LA|LUOT|LUỘC/i.test(ten)) {
+                    if (coTrung) {
                         trung += soLuong;
-                        tienTrung += soLuong * 10000;
                     }
 
-                    if (/XUC XICH|XÚC XÍCH/i.test(ten)) {
+                    if (coXucXich) {
                         xucxich += soLuong;
-                        tienXucxich += soLuong * 10000;
+                    }
+
+                    if (soMonThem > 0) {
+                        if (coTrung && coXucXich) {
+                            tienTrung += Math.round(tienMonThem / 2);
+                            tienXucxich += tienMonThem - Math.round(tienMonThem / 2);
+                        } else if (coTrung) {
+                            tienTrung += tienMonThem;
+                        } else {
+                            tienXucxich += tienMonThem;
+                        }
                     }
 
                     continue;
                 }
 
+                // ===== KIMBAP =====
                 if (/KIMBAP/i.test(ten)) {
                     kimbap += soLuong;
-                    tienKimbap += soLuong * 20000;
+                    tienKimbap += tien;
                     continue;
                 }
 
+                // ===== XÚC XÍCH =====
                 if (/XUC XICH|XÚC XÍCH/i.test(ten)) {
                     xucxich += soLuong;
                     tienXucxich += tien;
                     continue;
                 }
 
+                // ===== TRỨNG =====
                 if (/TRUNG|TRỨNG|OP LA|ỐP LA|LUOT|LUỘC/i.test(ten)) {
                     trung += soLuong;
-                    tienTrung += soLuong * 10000;
+                    tienTrung += tien;
                     continue;
                 }
 
+                // ===== KEM =====
                 if (/KEM/i.test(ten)) {
                     kem += soLuong;
-                    tienKem += soLuong * 15000;
+                    tienKem += tien;
                     continue;
                 }
 
+                // ===== SNACK =====
                 if (/BIM|SNACK/i.test(ten)) {
                     snack += soLuong;
                     tienSnack += tien;
                     continue;
                 }
 
+                // ===== THUỐC =====
                 if (/THUOC|THUỐC/i.test(ten)) {
                     thuoc += soLuong;
-                    tienThuoc += soLuong * 25000;
+                    tienThuoc += tien;
+                    continue;
+                }
+
+                // ===== CƠM RANG =====
+                if (/COM RANG|CƠM RANG/i.test(ten)) {
+                    comRang += soLuong;
+                    tienComRang += tien;
                     continue;
                 }
             }
@@ -943,20 +972,24 @@
                 tien12 + tien14 + tien15 + tien20 +
                 tienMyNuoc + tienMyXao +
                 tienKimbap + tienXucxich + tienTrung +
-                tienKem + tienSnack + tienThuoc;
+                tienKem + tienSnack + tienThuoc + tienComRang;
 
             let kiemTra = "";
 
-            if (tongBaoCao && tongBaoCao !== tongAI) {
+            if (tongBaoCao > 0 && tongBaoCao !== tongAI) {
                 kiemTra =
-                    `⚠️ Phát hiện AI tính sai doanh thu
-🚫 Hãy báo cho Đại ngay!
-✅ Tính tay tạm đi để không bị thiếu hàng
-📄 Tổng báo cáo: ${tongBaoCao.toLocaleString()} đ
-🤖 AI tính: ${tongAI.toLocaleString()} đ
-📌 Chênh lệch: ${(tongAI - tongBaoCao).toLocaleString()} đ
+                    `⚠️ PHÁT HIỆN CHÊNH LỆCH DOANH THU
+🚫 Hãy kiểm tra lại báo cáo gốc!
+📄 Tổng báo cáo: ${tongBaoCao.toLocaleString("vi-VN")} đ
+🤖 AI tính: ${tongAI.toLocaleString("vi-VN")} đ
+📌 Chênh lệch: ${(tongAI - tongBaoCao).toLocaleString("vi-VN")} đ
 
 `;
+            }
+
+            if (soDongDocDuoc === 0) {
+                kiemTra =
+                    "⚠️ Không đọc được dòng hàng bán nào. Hãy kiểm tra định dạng báo cáo.\n";
             }
 
             // Lấy thời gian ca
@@ -969,25 +1002,26 @@
 
             return `📊 PHÂN TÍCH DOANH THU
 ----------------------------
-🥤 Nước 12k : ${nuoc12 + comboNuoc10} món - ${tien12.toLocaleString()} đ
-🥤 Nước 14k : ${nuoc14} món - ${tien14.toLocaleString()} đ
-🥤 Nước 15k : ${nuoc15} món - ${tien15.toLocaleString()} đ
-🥤 Nước 20k : ${nuoc20} món - ${tien20.toLocaleString()} đ
+🥤 Nước 12k : ${nuoc12 + comboNuoc10} món - ${tien12.toLocaleString("vi-VN")} đ
+🥤 Nước 14k : ${nuoc14} món - ${tien14.toLocaleString("vi-VN")} đ
+🥤 Nước 15k : ${nuoc15} món - ${tien15.toLocaleString("vi-VN")} đ
+🥤 Nước 20k : ${nuoc20} món - ${tien20.toLocaleString("vi-VN")} đ
 
-🍜 Mỳ nước  : ${myNuoc} món - ${tienMyNuoc.toLocaleString()} đ
-🍜 Mỳ xào   : ${myXao} món - ${tienMyXao.toLocaleString()} đ
-🍜 Tổng mỳ  : ${tongMy} món - ${tienTongMy.toLocaleString()} đ
+🍜 Mỳ nước  : ${myNuoc} món - ${tienMyNuoc.toLocaleString("vi-VN")} đ
+🍜 Mỳ xào   : ${myXao} món - ${tienMyXao.toLocaleString("vi-VN")} đ
+🍜 Tổng mỳ  : ${tongMy} món - ${tienTongMy.toLocaleString("vi-VN")} đ
 
-🍙 Kimbap   : ${kimbap} món - ${tienKimbap.toLocaleString()} đ
-🌭 Xúc xích : ${xucxich} món - ${tienXucxich.toLocaleString()} đ
-🥚 Trứng    : ${trung} món - ${tienTrung.toLocaleString()} đ
-🍦 Kem      : ${kem} món - ${tienKem.toLocaleString()} đ
-🍟 Snack    : ${snack} món - ${tienSnack.toLocaleString()} đ
-🚬 Thuốc lá : ${thuoc} món - ${tienThuoc.toLocaleString()} đ
+🍙 Kimbap   : ${kimbap} món - ${tienKimbap.toLocaleString("vi-VN")} đ
+🌭 Xúc xích : ${xucxich} món - ${tienXucxich.toLocaleString("vi-VN")} đ
+🥚 Trứng    : ${trung} món - ${tienTrung.toLocaleString("vi-VN")} đ
+🍦 Kem      : ${kem} món - ${tienKem.toLocaleString("vi-VN")} đ
+🍟 Snack    : ${snack} món - ${tienSnack.toLocaleString("vi-VN")} đ
+🚬 Thuốc lá : ${thuoc} món - ${tienThuoc.toLocaleString("vi-VN")} đ
+🍚 Cơm rang : ${comRang} món - ${tienComRang.toLocaleString("vi-VN")} đ
 
 🎁 Nước Combo 0đ: ${comboNuoc10} chai
 
-💰 TỔNG CỘNG: ${tongAI.toLocaleString()} đ
+💰 TỔNG CỘNG: ${tongAI.toLocaleString("vi-VN")} đ
 ----------------------------
 ${thoiGianCa}
 ${kiemTra}`;
